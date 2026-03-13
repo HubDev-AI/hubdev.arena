@@ -5,15 +5,61 @@ import { LogoutButton } from "@/components/logout-button";
 
 export function SiteHeader({ session }: { session: BuilderSession | null }) {
   return (
-    <header className="sticky top-0 z-40 border-b-[3px] border-[var(--ink)] bg-[var(--surface)]">
+    <header
+      className="sticky top-0 z-40"
+      style={{
+        background: "var(--white)",
+        borderBottom: "var(--border-thick)",
+        padding: 0,
+      }}
+    >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="group flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border-[3px] border-[var(--ink)] bg-[var(--ink)] font-mono text-xs font-bold uppercase tracking-wider text-[var(--surface)] transition group-hover:bg-[var(--accent-green)] group-hover:text-[var(--ink)]">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: 40,
+              height: 40,
+              border: "3px solid var(--black)",
+              background: "var(--black)",
+              fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+              fontSize: 12,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "var(--white)",
+              transition: "background 0.15s, color 0.15s",
+              flexShrink: 0,
+            }}
+            className="group-hover:bg-[var(--green)] group-hover:text-[var(--black)]"
+          >
             HA
           </div>
           <div className="hidden sm:block">
-            <p className="brutal-label">Weekly battles for AI-built apps</p>
-            <p className="text-lg font-black tracking-tight text-[var(--ink)]">
+            <p
+              style={{
+                fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+                fontSize: 10,
+                textTransform: "uppercase",
+                letterSpacing: "0.28em",
+                color: "var(--muted)",
+              }}
+            >
+              Weekly battles for AI-built apps
+            </p>
+            <p
+              style={{
+                fontFamily: "var(--font-heading, 'Syne', sans-serif)",
+                fontWeight: 900,
+                fontSize: "1.125rem",
+                textTransform: "uppercase",
+                letterSpacing: "-0.02em",
+                color: "var(--black)",
+                lineHeight: 1.1,
+              }}
+            >
               HubDev Arena
             </p>
           </div>
@@ -29,7 +75,19 @@ export function SiteHeader({ session }: { session: BuilderSession | null }) {
             <Link
               key={link.href}
               href={link.href}
-              className="border-2 border-transparent px-3 py-2 font-mono text-xs font-bold uppercase tracking-widest text-[var(--ink)] transition hover:border-[var(--ink)] hover:bg-[var(--accent-green)]"
+              style={{
+                fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+                fontSize: 11,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.15em",
+                color: "var(--black)",
+                padding: "0.5rem 0.75rem",
+                border: "2px solid transparent",
+                textDecoration: "none",
+                transition: "border-color 0.1s, background 0.1s",
+              }}
+              className="hover:border-[var(--black)] hover:bg-[var(--green)]"
             >
               {link.label}
             </Link>
@@ -40,8 +98,25 @@ export function SiteHeader({ session }: { session: BuilderSession | null }) {
           {session ? (
             <>
               <div className="hidden text-right sm:block">
-                <p className="text-sm font-bold text-[var(--ink)]">{session.displayName}</p>
-                <p className="brutal-label">
+                <p
+                  style={{
+                    fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+                    fontWeight: 700,
+                    fontSize: 13,
+                    color: "var(--black)",
+                  }}
+                >
+                  @{session.displayName}
+                </p>
+                <p
+                  style={{
+                    fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+                    fontSize: 10,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.28em",
+                    color: "var(--muted)",
+                  }}
+                >
                   {session.isAdmin ? "Admin" : "Member"}
                 </p>
               </div>

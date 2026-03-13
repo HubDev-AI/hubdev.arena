@@ -18,7 +18,7 @@ const bodyFont = Inter({
 });
 
 const monoFont = Space_Mono({
-  variable: "--font-mono",
+  variable: "--font-mono-var",
   subsets: ["latin"],
   weight: ["400", "700"],
 });

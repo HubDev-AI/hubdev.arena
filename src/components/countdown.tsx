@@ -24,26 +24,69 @@ export function Countdown({ targetIso, label }: { targetIso: string; label: stri
 
   const items = useMemo(
     () => [
-      { label: "Days", value: String(parts.days).padStart(2, "0") },
-      { label: "Hours", value: String(parts.hours).padStart(2, "0") },
-      { label: "Minutes", value: String(parts.minutes).padStart(2, "0") },
+      { label: "DAYS", value: String(parts.days).padStart(2, "0") },
+      { label: "HRS", value: String(parts.hours).padStart(2, "0") },
+      { label: "MIN", value: String(parts.minutes).padStart(2, "0") },
     ],
     [parts],
   );
 
   return (
-    <div className="brutal-card p-5">
-      <p className="brutal-label">{label}</p>
-      <div className="mt-4 grid grid-cols-3 gap-2">
-        {items.map((item) => (
+    <div
+      style={{
+        border: "var(--border-thick)",
+        boxShadow: "var(--shadow)",
+        background: "var(--white)",
+      }}
+    >
+      <div
+        style={{
+          fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+          fontSize: 10,
+          textTransform: "uppercase",
+          letterSpacing: "0.28em",
+          color: "var(--muted)",
+          padding: "0.5rem 1rem 0",
+        }}
+      >
+        {label}
+      </div>
+      <div style={{ display: "inline-flex", gap: 0, width: "100%" }}>
+        {items.map((item, i) => (
           <div
             key={item.label}
-            className="border-[2px] border-[var(--ink)] bg-[var(--bg)] p-3 text-center"
+            style={{
+              flex: 1,
+              textAlign: "center",
+              padding: "0.75rem 0.5rem",
+              borderRight: i < items.length - 1 ? "var(--border-thick)" : "none",
+            }}
           >
-            <p className="text-3xl font-black tracking-tight text-[var(--ink)]">
+            <p
+              style={{
+                fontFamily: "var(--font-heading, 'Syne', sans-serif)",
+                fontWeight: 900,
+                fontSize: "2.25rem",
+                lineHeight: 1,
+                color: "var(--black)",
+                letterSpacing: "-0.04em",
+              }}
+            >
               {item.value}
             </p>
-            <p className="brutal-label mt-1">{item.label}</p>
+            <p
+              style={{
+                fontFamily: "var(--font-mono, 'Space Mono', monospace)",
+                fontSize: 10,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                letterSpacing: "0.2em",
+                color: "var(--muted)",
+                marginTop: "0.25rem",
+              }}
+            >
+              {item.label}
+            </p>
           </div>
         ))}
       </div>

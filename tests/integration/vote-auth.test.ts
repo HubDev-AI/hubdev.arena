@@ -92,12 +92,19 @@ describe("authenticated voting boundaries", () => {
     mocks.getLeaderboard.mockResolvedValue([]);
   });
 
-  it("shows a sign-in gate on the vote page when the voter is not authenticated", async () => {
+  // Per Chunk 5 spec: the vote page now renders the VoteClient (first matchup)
+  // for unauthenticated visitors. The auth gate is a client-side modal that
+  // appears when the visitor taps VOTE without being signed in.
+  it("renders the voting page for unauthenticated visitors (pre-auth matchup)", async () => {
     const pageModule = await import("@/app/vote/page");
     const markup = renderToStaticMarkup(await pageModule.default());
 
-    expect(markup).toContain("Sign in to vote");
-    expect(markup).toContain("/login?next=%2Fvote");
+    // The page heading is always shown
+    expect(markup).toContain("Pick the app you would open again tomorrow");
+    // The sign-in prompt is in the subtitle copy
+    expect(markup).toContain("Sign in to save your votes");
+    // The page no longer hard-redirects to /login
+    expect(markup).not.toContain("/login?next=%2Fvote");
   });
 
   // GET /api/vote/next is intentionally auth-optional so anonymous visitors

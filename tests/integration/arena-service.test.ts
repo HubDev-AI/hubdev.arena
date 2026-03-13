@@ -56,6 +56,7 @@ function makeApprovedEntry(index: number, overrides: Partial<Entry> = {}): Entry
     appearanceCount: 0,
     submittedAt: NOW.toISOString(),
     approvedAt: new Date(NOW.getTime() + index * 1_000).toISOString(),
+    rejectionNote: null,
     ...overrides,
   };
 }
@@ -106,6 +107,7 @@ function makeSession(votesCast = 0): VoterSession {
   return {
     id: "session-1",
     weekId: "week-1",
+    userId: null,
     cookieId: "cookie-1",
     fingerprintHash: "fp-1",
     votesCast,

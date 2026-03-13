@@ -43,6 +43,7 @@ export type Entry = {
   appearanceCount: number;
   submittedAt: string;
   approvedAt: string | null;
+  rejectionNote: string | null;
 };
 
 export type Matchup = {
@@ -58,6 +59,7 @@ export type Matchup = {
 export type VoterSession = {
   id: string;
   weekId: string;
+  userId: string | null;
   cookieId: string;
   fingerprintHash: string;
   votesCast: number;
@@ -138,6 +140,7 @@ export interface ArenaRepository {
     weekId: string,
     cookieId: string,
   ): Promise<VoterSession | null>;
+  getVoterSessionByUserId(weekId: string, userId: string): Promise<VoterSession | null>;
   saveVoterSession(voterSession: VoterSession): Promise<VoterSession>;
   listVotesBySession(voterSessionId: string): Promise<Vote[]>;
   listVotesByFingerprint(weekId: string, fingerprintHash: string): Promise<Vote[]>;

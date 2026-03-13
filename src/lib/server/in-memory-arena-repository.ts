@@ -90,6 +90,13 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
         ) ?? null,
       );
     },
+    async getVoterSessionByUserId(weekId, userId) {
+      return clone(
+        state.voterSessions.find(
+          (s) => s.weekId === weekId && s.userId === userId,
+        ) ?? null,
+      );
+    },
     async saveVoterSession(voterSession) {
       upsertById(state.voterSessions, voterSession);
       return clone(voterSession);

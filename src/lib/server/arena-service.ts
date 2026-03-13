@@ -255,6 +255,7 @@ export function createArenaService(
         appearanceCount: 0,
         submittedAt: currentTime,
         approvedAt: null,
+        rejectionNote: null,
       };
 
       return saveEntryWithUniqueSlug(entry, week.id, input.title);
@@ -422,6 +423,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId,
           fingerprintHash,
           votesCast: 0,
@@ -518,6 +520,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId: input.cookieId,
           fingerprintHash: input.fingerprintHash,
           votesCast: 0,

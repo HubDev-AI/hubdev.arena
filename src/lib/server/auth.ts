@@ -23,48 +23,50 @@ export type BuilderSession = {
 export async function getSession() {
   const supabase = await createServerSupabaseClient()
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-  return session
+    data: { user },
+    error,
+  } = await supabase.auth.getUser()
+  if (error || !user) return null
+  return user
 }
 
 export async function requireSession(returnTo?: string) {
-  const session = await getSession()
-  if (!session) {
+  const user = await getSession()
+  if (!user) {
     const returnParam = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : ''
     redirect(`/login${returnParam}`)
   }
-  return session
+  return user
 }
 
 export async function getAdminSession() {
-  const session = await getSession()
-  if (!session) return null
+  const user = await getSession()
+  if (!user) return null
 
   const adminEmails = getAdminAllowlist()
-  if (!adminEmails.includes((session.user.email ?? '').toLowerCase())) return null
-  return session
+  if (!adminEmails.includes((user.email ?? '').toLowerCase())) return null
+  return user
 }
 
 // ---------------------------------------------------------------------------
 // BuilderSession helpers — used across pages, actions, and API routes.
-// These map a Supabase session onto the existing BuilderSession shape so all
+// These map a Supabase user onto the existing BuilderSession shape so all
 // callers continue to work without changes.
 // ---------------------------------------------------------------------------
 
-function supabaseSessionToBuilderSession(
-  session: Awaited<ReturnType<typeof getSession>>,
+function supabaseUserToBuilderSession(
+  user: Awaited<ReturnType<typeof getSession>>,
 ): BuilderSession | null {
-  if (!session) return null
+  if (!user) return null
   const adminEmails = getAdminAllowlist()
-  const email = session.user.email ?? ''
+  const email = user.email ?? ''
   const displayName =
-    (session.user.user_metadata?.full_name as string | undefined) ||
-    (session.user.user_metadata?.name as string | undefined) ||
+    (user.user_metadata?.full_name as string | undefined) ||
+    (user.user_metadata?.name as string | undefined) ||
     email.split('@')[0] ||
     'User'
   return {
-    userId: session.user.id,
+    userId: user.id,
     email,
     displayName,
     isAdmin: adminEmails.includes(email.toLowerCase()),
@@ -72,8 +74,8 @@ function supabaseSessionToBuilderSession(
 }
 
 export async function getBuilderSession(): Promise<BuilderSession | null> {
-  const session = await getSession()
-  return supabaseSessionToBuilderSession(session)
+  const user = await getSession()
+  return supabaseUserToBuilderSession(user)
 }
 
 export async function requireBuilderSession(nextPath?: string) {

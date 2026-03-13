@@ -2,10 +2,17 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { NextResponse, type NextRequest } from 'next/server'
 
+function safeReturnTo(returnTo: string | null): string {
+  if (returnTo && returnTo.startsWith('/') && !returnTo.startsWith('//')) {
+    return returnTo
+  }
+  return '/'
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const returnTo = searchParams.get('returnTo') ?? '/'
+  const returnTo = safeReturnTo(searchParams.get('returnTo'))
 
   if (code) {
     const cookieStore = await cookies()

@@ -29,12 +29,15 @@ async function signInWithEmail(formData: FormData) {
   if (!email) redirect('/login?error=email_required')
   const supabase = await createServerSupabaseClient()
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'http://localhost:3000'
-  await supabase.auth.signInWithOtp({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: `${siteUrl}/auth/callback?returnTo=${encodeURIComponent(returnTo)}`,
     },
   })
+  if (error) {
+    redirect(`/login?error=${encodeURIComponent(error.message)}`)
+  }
   redirect('/login?message=Check+your+email+for+a+magic+link')
 }
 

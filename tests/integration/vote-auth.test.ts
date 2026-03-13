@@ -3,16 +3,19 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   getBuilderSession: vi.fn(),
+  getSession: vi.fn(),
   getNextMatchup: vi.fn(),
   castVote: vi.fn(),
   attachVoterCookie: vi.fn(),
   getVoterIdentity: vi.fn(),
   getCurrentWeek: vi.fn(),
   getLeaderboard: vi.fn(),
+  getVoteDeck: vi.fn(),
 }));
 
 vi.mock("@/lib/server/auth", () => ({
   getBuilderSession: mocks.getBuilderSession,
+  getSession: mocks.getSession,
 }));
 
 vi.mock("@/lib/server/voter-identity", () => ({
@@ -31,6 +34,15 @@ vi.mock("@/lib/server/runtime", () => ({
   getArenaService: () => ({
     getCurrentWeek: mocks.getCurrentWeek,
     getLeaderboard: mocks.getLeaderboard,
+    getVoteDeck: mocks.getVoteDeck,
+    castVote: mocks.castVote,
+  }),
+}));
+
+vi.mock("@/lib/env", () => ({
+  getDataMode: () => "mock",
+  getEnv: () => ({
+    HUBDEV_FINGERPRINT_SECRET: "test-secret",
   }),
 }));
 
@@ -40,9 +52,11 @@ describe("authenticated voting boundaries", () => {
     vi.clearAllMocks();
 
     mocks.getBuilderSession.mockResolvedValue(null);
+    mocks.getSession.mockResolvedValue(null);
     mocks.getVoterIdentity.mockResolvedValue({
       cookieId: "cookie-1",
       fingerprintHash: "fp-1",
+      shouldSetCookie: false,
     });
     mocks.getNextMatchup.mockResolvedValue({
       matchupId: "matchup-1",
@@ -51,7 +65,18 @@ describe("authenticated voting boundaries", () => {
       votesCast: 0,
       votingClosesAt: "2026-03-13T07:00:00.000Z",
     });
-    mocks.castVote.mockResolvedValue({ ok: true });
+    mocks.getVoteDeck.mockResolvedValue({
+      matchupId: "matchup-1",
+      leftEntry: { id: "entry-1", title: "Entry 1" },
+      rightEntry: { id: "entry-2", title: "Entry 2" },
+      votesCast: 0,
+      votingClosesAt: "2026-03-13T07:00:00.000Z",
+    });
+    mocks.castVote.mockResolvedValue({
+      vote: { id: "vote-1", voterSessionId: "session-1" },
+      winner: { eloRating: 1020 },
+      loser: { eloRating: 980 },
+    });
     mocks.getCurrentWeek.mockResolvedValue({
       id: "week-1",
       slug: "agents-in-the-arena",
@@ -75,17 +100,22 @@ describe("authenticated voting boundaries", () => {
     expect(markup).toContain("/login?next=%2Fvote");
   });
 
-  it("returns 401 from GET /api/vote/next when the voter is not authenticated", async () => {
+  // GET /api/vote/next is intentionally auth-optional so anonymous visitors
+  // can see their first matchup before the sign-in gate is shown.
+  it("returns a matchup from GET /api/vote/next even when the voter is not authenticated", async () => {
     const nextVoteRouteModule = await import("@/app/api/vote/next/route");
     const response = await nextVoteRouteModule.GET(
       new Request("https://hubdev.ai/api/vote/next?week=agents-in-the-arena"),
     );
 
-    expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toMatchObject({
-      error: expect.stringMatching(/sign in/i),
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toMatchObject({ matchupId: "matchup-1" });
+    expect(mocks.getVoteDeck).toHaveBeenCalledWith({
+      weekSlug: "agents-in-the-arena",
+      cookieId: "cookie-1",
+      fingerprintHash: "fp-1",
     });
-    expect(mocks.getNextMatchup).not.toHaveBeenCalled();
   });
 
   it("returns 401 from POST /api/vote when the voter is not authenticated", async () => {

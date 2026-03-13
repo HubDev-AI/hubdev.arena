@@ -35,6 +35,7 @@ type ReviewEntryInput = {
   adminEmail: string;
   entryId: string;
   decision: "approved" | "rejected";
+  rejectionNote?: string;
 };
 
 type OpenVotingInput = {
@@ -322,7 +323,7 @@ export function createArenaService(
       return repository.saveWeek(week);
     },
 
-    async reviewEntry({ adminEmail, entryId, decision }: ReviewEntryInput) {
+    async reviewEntry({ adminEmail, entryId, decision, rejectionNote }: ReviewEntryInput) {
       await assertAdmin(adminEmail);
 
       const currentTime = now().toISOString();
@@ -345,6 +346,8 @@ export function createArenaService(
 
       entry.status = decision;
       entry.approvedAt = decision === "approved" ? currentTime : null;
+      entry.rejectedAt = decision === "rejected" ? currentTime : null;
+      entry.rejectionNote = decision === "rejected" ? (rejectionNote ?? null) : null;
       return repository.saveEntry(entry);
     },
 
@@ -395,19 +398,33 @@ export function createArenaService(
 
     async getWeekAdminDetail(weekSlug: string) {
       const week = await loadWeek(weekSlug);
-      const entries = await repository.listEntriesByWeek(week.id);
-      const matchups = await repository.listMatchupsByWeek(week.id);
+      const [entries, matchups, voterSessions, votes, profiles] = await Promise.all([
+        repository.listEntriesByWeek(week.id),
+        repository.listMatchupsByWeek(week.id),
+        repository.listVoterSessionsByWeek(week.id),
+        repository.listVotesByWeek(week.id),
+        repository.listProfiles(),
+      ]);
       const leaderboard = await this.getLeaderboard({ weekSlug });
+
+      const profilesById = new Map(profiles.map((p) => [p.id, p]));
+      const sortedEntries = entries.sort(
+        (left, right) =>
+          new Date(right.submittedAt).getTime() -
+          new Date(left.submittedAt).getTime(),
+      );
 
       return {
         week,
-        entries: entries.sort(
-          (left, right) =>
-            new Date(right.submittedAt).getTime() -
-            new Date(left.submittedAt).getTime(),
-        ),
+        entries: sortedEntries,
+        entriesWithBuilders: sortedEntries.map((entry) => ({
+          ...entry,
+          builder: profilesById.get(entry.builderId) ?? null,
+        })),
         matchups,
         leaderboard,
+        voterSessions,
+        votes,
       };
     },
 
@@ -680,6 +697,25 @@ export function createArenaService(
       );
 
       return winners.filter((week) => week.topEntry).slice(0, limit);
+    },
+
+    async listProfiles() {
+      return repository.listProfiles();
+    },
+
+    async setFoundingBuilder({
+      adminEmail,
+      profileId,
+      foundingBuilder,
+    }: {
+      adminEmail: string;
+      profileId: string;
+      foundingBuilder: boolean;
+    }) {
+      await assertAdmin(adminEmail);
+      const profile = await loadProfile(profileId);
+      profile.foundingBuilder = foundingBuilder;
+      return repository.saveProfile(profile);
     },
   };
 }

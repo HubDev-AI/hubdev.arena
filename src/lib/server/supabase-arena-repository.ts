@@ -513,6 +513,24 @@ export function createSupabaseArenaRepository(client: SupabaseClient): ArenaRepo
       return mapVoterSession(data as DbVoterSession)
     },
 
+    async listVoterSessionsByWeek(weekId) {
+      const { data, error } = await client
+        .from('voter_sessions')
+        .select('*')
+        .eq('week_id', weekId)
+      if (error) throw error
+      return (data as DbVoterSession[]).map(mapVoterSession)
+    },
+
+    async listVotesByWeek(weekId) {
+      const { data, error } = await client
+        .from('votes')
+        .select('*')
+        .eq('week_id', weekId)
+      if (error) throw error
+      return (data as DbVote[]).map(mapVote)
+    },
+
     async saveVoterSession(voterSession) {
       const { data, error } = await client
         .from('voter_sessions')

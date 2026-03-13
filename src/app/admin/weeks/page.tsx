@@ -1,54 +1,56 @@
-import Link from "next/link";
-
 import { createWeekAction } from "@/app/admin/actions";
 import { requireAdminSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
+import { WeekTable } from "@/components/admin/week-table";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminWeeksPage() {
   await requireAdminSession("/admin/weeks");
-  const weeks = await getArenaService().listWeeks();
+  const service = getArenaService();
+  const weeks = await service.listWeeks();
+
+  // Load entry counts for each week in parallel
+  const weeksWithCounts = await Promise.all(
+    weeks.map(async (week) => {
+      // Re-use the repository-level list rather than the full admin detail
+      const entries = await service.getWeekAdminDetail(week.slug).then((d) => d.entries);
+      return {
+        ...week,
+        pendingCount: entries.filter((e) => e.status === "pending").length,
+        approvedCount: entries.filter((e) => e.status === "approved").length,
+        rejectedCount: entries.filter((e) => e.status === "rejected").length,
+      };
+    }),
+  );
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_420px] lg:px-8">
-      <div className="space-y-5">
+    <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-8 flex items-end justify-between gap-4">
         <div>
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">
-            Admin weeks
+            Admin
           </p>
           <h1 className="mt-2 text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
             Weekly round control
           </h1>
         </div>
-
-        <div className="space-y-4">
-          {weeks.map((week) => (
-            <Link
-              key={week.id}
-              href={`/admin/weeks/${week.slug}`}
-              className="block rounded-[2rem] border border-[var(--line)] bg-white/84 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)] transition hover:-translate-y-0.5 hover:border-[var(--ink)]"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
-                  <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                    {week.status.replaceAll("_", " ")}
-                  </p>
-                  <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-[var(--ink)]">
-                    {week.themeTitle}
-                  </h2>
-                  <p className="mt-2 text-sm text-[var(--muted)]">{week.themeDescription}</p>
-                </div>
-                <span className="rounded-full bg-[var(--acid)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--ink)]">
-                  {week.slug}
-                </span>
-              </div>
-            </Link>
-          ))}
-        </div>
       </div>
 
+      {/* Weeks table */}
+      <div className="mb-12 rounded-[2rem] border border-[var(--line)] bg-white/84 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
+        {weeksWithCounts.length === 0 ? (
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
+            No weeks yet. Create one below.
+          </p>
+        ) : (
+          <WeekTable weeks={weeksWithCounts} />
+        )}
+      </div>
+
+      {/* Create week form */}
       <form
+        id="create"
         action={createWeekAction}
         className="space-y-4 rounded-[2rem] border border-[var(--line)] bg-white/86 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]"
       >

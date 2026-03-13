@@ -143,6 +143,8 @@ export interface ArenaRepository {
   ): Promise<VoterSession | null>;
   getVoterSessionByUserId(weekId: string, userId: string): Promise<VoterSession | null>;
   saveVoterSession(voterSession: VoterSession): Promise<VoterSession>;
+  listVoterSessionsByWeek(weekId: string): Promise<VoterSession[]>;
+  listVotesByWeek(weekId: string): Promise<Vote[]>;
   listVotesBySession(voterSessionId: string): Promise<Vote[]>;
   listVotesByFingerprint(weekId: string, fingerprintHash: string): Promise<Vote[]>;
   getVoteByIdempotencyKey(

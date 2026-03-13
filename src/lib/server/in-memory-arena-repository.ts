@@ -101,6 +101,12 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
       upsertById(state.voterSessions, voterSession);
       return clone(voterSession);
     },
+    async listVoterSessionsByWeek(weekId) {
+      return clone(state.voterSessions.filter((s) => s.weekId === weekId));
+    },
+    async listVotesByWeek(weekId) {
+      return clone(state.votes.filter((vote) => vote.weekId === weekId));
+    },
     async listVotesBySession(voterSessionId) {
       return clone(
         state.votes.filter((vote) => vote.voterSessionId === voterSessionId),

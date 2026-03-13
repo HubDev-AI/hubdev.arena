@@ -28,6 +28,7 @@ export default async function MySubmissionsPage() {
   const session = await requireBuilderSession("/my-submissions");
   const arenaService = getArenaService();
   const groups = await arenaService.getMySubmissions(session.userId);
+  const now = new Date();
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -93,7 +94,8 @@ export default async function MySubmissionsPage() {
                       )}
 
                       {entry.status === "rejected" &&
-                        group.week.status === "submissions_open" && (
+                        group.week.status === "submissions_open" &&
+                        now < new Date(group.week.submissionCloseAt) && (
                           <Link
                             href="/submit"
                             className="brutal-btn brutal-btn-green text-[11px] px-3 py-2"

@@ -301,7 +301,7 @@ export function EntryDetailPanel({
           )}
 
           {/* Approve / Reject */}
-          {entry.status !== "approved" && !rejecting && (
+          {entry.status === "pending" && !rejecting && (
             <div style={{ display: "flex", gap: "12px" }}>
               <button
                 onClick={() => onApprove(entry.id)}

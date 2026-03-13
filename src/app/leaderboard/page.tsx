@@ -4,14 +4,9 @@ import { getArenaService } from "@/lib/server/runtime";
 export const dynamic = "force-dynamic";
 
 export default async function LeaderboardPage() {
-  const service = getArenaService();
-  const week = await service.getCurrentWeek();
-
-  if (!week) {
-    return null;
-  }
-
-  const leaderboard = await service.getLeaderboard({ weekSlug: week.slug });
+  const arenaService = getArenaService();
+  const week = await arenaService.getCurrentWeek();
+  const rows = week ? await arenaService.getLeaderboard({ weekSlug: week.slug }) : [];
 
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
@@ -20,13 +15,25 @@ export default async function LeaderboardPage() {
           Weekly leaderboard
         </p>
         <h1 className="mt-2 text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
-          {week.themeTitle}
+          {week ? week.themeTitle : "No active week"}
         </h1>
         <p className="mt-3 max-w-2xl text-base leading-7 text-[var(--muted)]">
           Ranking order is ELO descending, then wins, then losses, then earliest approval.
         </p>
       </div>
-      <LiveLeaderboard weekSlug={week.slug} initialRows={leaderboard} />
+
+      {week ? (
+        <LiveLeaderboard
+          initialRows={rows}
+          weekId={week.id}
+          weekSlug={week.slug}
+          weekStatus={week.status}
+        />
+      ) : (
+        <div className="brutal-card p-6">
+          <p className="text-base text-[var(--muted)]">No active week. Check back soon.</p>
+        </div>
+      )}
     </div>
   );
 }

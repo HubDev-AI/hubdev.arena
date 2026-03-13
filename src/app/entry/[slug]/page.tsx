@@ -12,72 +12,104 @@ export default async function EntryDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const detail = await getArenaService().getEntryDetail(slug);
+  const arenaService = getArenaService();
+  const detail = await arenaService.getEntryDetail(slug);
 
-  if (!detail) {
+  if (!detail || detail.entry.status !== "approved") {
     notFound();
+  }
+
+  const { entry, week, builder } = detail;
+
+  const votingHasOpened =
+    week.status === "voting_open" ||
+    week.status === "locked" ||
+    week.status === "archived";
+
+  // Get rank from leaderboard
+  let rank: number | null = null;
+  if (votingHasOpened) {
+    const leaderboard = await arenaService.getLeaderboard({ weekSlug: week.slug });
+    rank = leaderboard.find((r) => r.entrySlug === entry.slug)?.rank ?? null;
   }
 
   return (
     <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-8">
+      {/* Main content */}
       <div className="space-y-6">
         <div className="space-y-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">
-            {detail.week.themeTitle}
+            {week.themeTitle}
           </p>
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
-            {detail.entry.title}
+          <h1 className="font-display text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
+            {entry.title}
           </h1>
-          <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
-            {detail.entry.oneLiner}
-          </p>
+          <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">{entry.oneLiner}</p>
         </div>
-        <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-[26rem]" />
+
+        <EntryMedia
+          assetPath={entry.demoAssetPath}
+          title={entry.title}
+          className="h-[26rem]"
+        />
       </div>
 
+      {/* Sidebar */}
       <aside className="space-y-5">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white/86 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-            Builder
-          </p>
+        {/* Builder card */}
+        <div className="brutal-card p-6">
+          <p className="brutal-label">Builder</p>
+          {builder.avatarUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={builder.avatarUrl}
+              alt={builder.displayName}
+              className="mt-3 h-12 w-12 rounded-full border-[2px] border-[var(--ink)]"
+            />
+          )}
           <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-            {detail.builder.displayName}
+            {builder.displayName}
           </p>
-          <p className="mt-2 text-sm text-[var(--muted)]">@{detail.builder.username}</p>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="rounded-[1.4rem] border border-[var(--line)] bg-[var(--paper)] p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                Elo
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-                {detail.entry.eloRating}
-              </p>
-            </div>
-            <div className="rounded-[1.4rem] border border-[var(--line)] bg-[var(--paper)] p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                Record
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-                {detail.entry.wins}-{detail.entry.losses}
-              </p>
+          <p className="mt-1 font-mono text-sm text-[var(--muted)]">@{builder.username}</p>
+        </div>
+
+        {/* Stats card — only after voting opens */}
+        {votingHasOpened && (
+          <div className="brutal-card p-6">
+            <div className="grid grid-cols-3 gap-3">
+              {rank !== null && (
+                <div className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] p-3 text-center">
+                  <p className="brutal-label">Rank</p>
+                  <p className="mt-1 text-xl font-black text-[var(--ink)]">#{rank}</p>
+                </div>
+              )}
+              <div className="border-[2px] border-[var(--ink)] bg-[var(--paper)] p-3 text-center">
+                <p className="brutal-label">ELO</p>
+                <p className="mt-1 text-xl font-black text-[var(--ink)]">{entry.eloRating}</p>
+              </div>
+              <div className="border-[2px] border-[var(--ink)] bg-[var(--paper)] p-3 text-center">
+                <p className="brutal-label">Record</p>
+                <p className="mt-1 text-xl font-black text-[var(--ink)]">
+                  {entry.wins}-{entry.losses}
+                </p>
+              </div>
             </div>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href={detail.entry.liveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
-            >
-              Open app
-            </a>
-            <Link
-              href="/vote"
-              className="rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink)] transition hover:border-[var(--ink)] hover:bg-[var(--paper)]"
-            >
-              Vote now
-            </Link>
-          </div>
+        )}
+
+        {/* CTAs */}
+        <div className="flex flex-col gap-3">
+          <a
+            href={entry.liveUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="brutal-btn brutal-btn-green text-center"
+          >
+            Open app →
+          </a>
+          <Link href="/leaderboard" className="brutal-btn brutal-btn-outline text-center">
+            View leaderboard →
+          </Link>
         </div>
       </aside>
     </div>

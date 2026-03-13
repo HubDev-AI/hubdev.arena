@@ -6,6 +6,10 @@ import { BUILDER_COOKIE_NAME } from "@/lib/server/auth";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
 
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV !== "development") {
+    return new Response("Not found", { status: 404 });
+  }
+
   if (getDataMode() !== "mock") {
     return NextResponse.json({ error: "Mock login is disabled." }, { status: 404 });
   }

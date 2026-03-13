@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 
 import { getSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
@@ -59,7 +60,10 @@ export async function GET(request: Request) {
     }
     return response;
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load the next matchup.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+    }
+    const message = error instanceof Error ? error.message : 'Internal error.'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

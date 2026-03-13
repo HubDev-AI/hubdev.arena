@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
-import { z } from "zod";
+import { z, ZodError } from "zod";
 
 import { getDataMode, getEnv } from "@/lib/env";
 import { getSession } from "@/lib/server/auth";
@@ -166,7 +166,7 @@ export async function POST(request: Request) {
 
     if (rpcError) {
       // 23505 = unique_violation — duplicate idempotency key
-      if (rpcError.code === "23505" || rpcError.message?.includes("23505")) {
+      if (rpcError.code === "23505") {
         return NextResponse.json({ duplicate: true }, { status: 200 });
       }
       throw rpcError;
@@ -181,7 +181,10 @@ export async function POST(request: Request) {
       sessionVotesCast: row.session_votes_cast,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Vote failed.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: 'Invalid request.' }, { status: 400 })
+    }
+    const message = error instanceof Error ? error.message : 'Internal error.'
+    return NextResponse.json({ error: message }, { status: 500 })
   }
 }

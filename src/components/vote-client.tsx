@@ -188,26 +188,6 @@ export function VoteClient({
     void loadNextMatchup();
   }, [loadNextMatchup]);
 
-  // ------------------------------------------------------------------
-  // Auth gate: user signed in
-  // ------------------------------------------------------------------
-
-  const handleSignedIn = useCallback(async () => {
-    setIsSignedIn(true);
-
-    setState((prev) => {
-      if (prev.phase !== "auth-gate") return prev;
-      // Kick off vote submission — we need matchup + intent from state
-      // but we can't use async directly in setState. Use an effect trick
-      // via a ref instead (see below).
-      return prev; // state update happens in the effect
-    });
-
-    // To avoid stale state in the callback we read the current state via ref
-    // (see stateRef below).
-    // The actual submission is done outside setState.
-  }, []);
-
   // stateRef lets async callbacks read the latest state
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -325,7 +305,7 @@ export function VoteClient({
             <button
               type="button"
               className="brutal-btn brutal-btn-green"
-              onClick={() => void loadNextMatchup()}
+              onClick={() => { setVotesCast(0); void loadNextMatchup(); }}
             >
               Keep voting →
             </button>

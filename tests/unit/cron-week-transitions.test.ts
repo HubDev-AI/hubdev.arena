@@ -105,12 +105,26 @@ describe('GET /api/cron/week-transitions', () => {
     expect(body).toEqual({ transitioned: [], skipped: [] })
   })
 
-  it('returns 200 with no CRON_SECRET set (open endpoint)', async () => {
+  it('returns 200 with no CRON_SECRET set in non-production (local testing allowed)', async () => {
+    // NODE_ENV is 'test' in this environment, so no secret is required
     mockListWeeks.mockResolvedValue([])
 
     const res = await GET(makeRequest())
 
     expect(res.status).toBe(200)
+  })
+
+  it('returns 500 when CRON_SECRET is not set in production', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    mockListWeeks.mockResolvedValue([])
+
+    const res = await GET(makeRequest())
+
+    vi.unstubAllEnvs()
+
+    expect(res.status).toBe(500)
+    const text = await res.text()
+    expect(text).toMatch(/CRON_SECRET not configured/i)
   })
 
   it('returns 500 when ADMIN_ALLOWLIST is not configured', async () => {

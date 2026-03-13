@@ -1,12 +1,20 @@
 import { NextResponse, type NextRequest } from 'next/server'
 import { getArenaService } from '@/lib/server/runtime'
 
+// force-dynamic prevents Next.js from pre-rendering this route at build time,
+// which would evaluate Date.now() once rather than on each invocation
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   // Verify cron secret
   const authHeader = request.headers.get('authorization')
   const cronSecret = process.env.CRON_SECRET
+  const isProd = process.env.NODE_ENV === 'production'
+
+  if (isProd && !cronSecret) {
+    console.error('[cron] CRON_SECRET must be set in production')
+    return new Response('CRON_SECRET not configured', { status: 500 })
+  }
 
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return new Response('Unauthorized', { status: 401 })
@@ -48,6 +56,7 @@ export async function GET(request: NextRequest) {
         const approvedCount = detail.entries.filter((e) => e.status === 'approved').length
 
         if (approvedCount < 2) {
+          console.warn(`[cron] Skipping voting_open for "${week.slug}": only ${approvedCount} approved entries (need ≥2)`)
           skipped.push({
             weekSlug: week.slug,
             reason: `Only ${approvedCount} approved entries (need ≥2 to open voting)`,

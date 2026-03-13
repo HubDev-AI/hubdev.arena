@@ -230,14 +230,19 @@ export function createArenaService(
       }
 
       const pendingEntry = builderEntries.find((entry) => entry.status === "pending");
+      const rejectedEntry = builderEntries.find((entry) => entry.status === "rejected");
+      const existingEntry = pendingEntry ?? rejectedEntry;
 
-      if (pendingEntry) {
-        pendingEntry.title = input.title;
-        pendingEntry.oneLiner = input.oneLiner;
-        pendingEntry.liveUrl = input.liveUrl;
-        pendingEntry.demoAssetPath = input.demoAssetPath;
-        pendingEntry.submittedAt = currentTime;
-        return saveEntryWithUniqueSlug(pendingEntry, week.id, input.title);
+      if (existingEntry) {
+        existingEntry.title = input.title;
+        existingEntry.oneLiner = input.oneLiner;
+        existingEntry.liveUrl = input.liveUrl;
+        existingEntry.demoAssetPath = input.demoAssetPath;
+        existingEntry.submittedAt = currentTime;
+        existingEntry.status = "pending";
+        existingEntry.rejectedAt = null;
+        existingEntry.rejectionNote = null;
+        return saveEntryWithUniqueSlug(existingEntry, week.id, input.title);
       }
 
       const entry: Entry = {

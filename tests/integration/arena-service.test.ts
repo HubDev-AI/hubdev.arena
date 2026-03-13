@@ -343,6 +343,121 @@ describe("ArenaService", () => {
     ).rejects.toThrow(/100 votes per day/i);
   });
 
+  it("persists rejectionNote when an admin rejects an entry", async () => {
+    const repository = createInMemoryArenaRepository({
+      profiles: [makeProfile(1)],
+      weeks: [makeWeek()],
+      entries: [
+        makeApprovedEntry(1, {
+          id: "entry-pending-note",
+          status: "pending",
+          approvedAt: null,
+          rejectedAt: null,
+          rejectionNote: null,
+        }),
+      ],
+      matchups: [],
+      voterSessions: [],
+      votes: [],
+    });
+    const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+
+    const rejected = await service.reviewEntry({
+      adminEmail: "admin@example.com",
+      entryId: "entry-pending-note",
+      decision: "rejected",
+      rejectionNote: "Needs a demo video",
+    });
+
+    expect(rejected.status).toBe("rejected");
+    expect(rejected.rejectionNote).toBe("Needs a demo video");
+    expect(rejected.rejectedAt).toBe(NOW.toISOString());
+    expect(rejected.approvedAt).toBeNull();
+  });
+
+  it("resets rejectionNote to null when an entry is approved", async () => {
+    const repository = createInMemoryArenaRepository({
+      profiles: [makeProfile(1)],
+      weeks: [makeWeek()],
+      entries: [
+        makeApprovedEntry(1, {
+          id: "entry-to-approve",
+          status: "pending",
+          approvedAt: null,
+          rejectedAt: null,
+          rejectionNote: null,
+        }),
+      ],
+      matchups: [],
+      voterSessions: [],
+      votes: [],
+    });
+    const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+
+    const approved = await service.reviewEntry({
+      adminEmail: "admin@example.com",
+      entryId: "entry-to-approve",
+      decision: "approved",
+    });
+
+    expect(approved.status).toBe("approved");
+    expect(approved.rejectionNote).toBeNull();
+    expect(approved.approvedAt).toBe(NOW.toISOString());
+  });
+
+  it("full submission lifecycle: submit → rejected → resubmit updates the same entry", async () => {
+    const repository = createInMemoryArenaRepository({
+      profiles: [makeProfile(1)],
+      weeks: [makeWeek()],
+      entries: [],
+      matchups: [],
+      voterSessions: [],
+      votes: [],
+    });
+    const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+
+    // Step 1: submit
+    const first = await service.submitEntry({
+      weekSlug: "agents-in-the-arena",
+      builderId: "builder-1",
+      title: "First Try",
+      oneLiner: "Initial pitch",
+      liveUrl: "https://first-try.example.com",
+      demoAssetPath: "demo-assets/first-try.gif",
+    });
+
+    expect(first.status).toBe("pending");
+
+    // Step 2: admin rejects with a note
+    await service.reviewEntry({
+      adminEmail: "admin@example.com",
+      entryId: first.id,
+      decision: "rejected",
+      rejectionNote: "Missing demo",
+    });
+
+    // Step 3: builder resubmits — should update the same entry, not create a new one
+    const resubmitted = await service.submitEntry({
+      weekSlug: "agents-in-the-arena",
+      builderId: "builder-1",
+      title: "First Try V2",
+      oneLiner: "Updated pitch",
+      liveUrl: "https://first-try-v2.example.com",
+      demoAssetPath: "demo-assets/first-try-v2.gif",
+    });
+
+    expect(resubmitted.id).toBe(first.id); // same entry, not a new one
+    expect(resubmitted.status).toBe("pending");
+    expect(resubmitted.rejectionNote).toBeNull(); // note cleared on resubmit
+    expect(resubmitted.rejectedAt).toBeNull(); // rejectedAt cleared on resubmit
+    expect(resubmitted.title).toBe("First Try V2");
+
+    // Confirm only one entry exists in the repository
+    const week = await repository.getWeekBySlug("agents-in-the-arena");
+    const allEntries = await repository.listEntriesByWeek(week!.id);
+    expect(allEntries).toHaveLength(1);
+  });
+
   it("recalculates the weekly leaderboard after votes land", async () => {
     const approvedEntries = [makeApprovedEntry(1), makeApprovedEntry(2), makeApprovedEntry(3)];
     const repository = createInMemoryArenaRepository({

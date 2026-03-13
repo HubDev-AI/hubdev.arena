@@ -56,6 +56,7 @@ function makeApprovedEntry(index: number, overrides: Partial<Entry> = {}): Entry
     appearanceCount: 0,
     submittedAt: NOW.toISOString(),
     approvedAt: new Date(NOW.getTime() + index * 1_000).toISOString(),
+    rejectedAt: null,
     rejectionNote: null,
     ...overrides,
   };

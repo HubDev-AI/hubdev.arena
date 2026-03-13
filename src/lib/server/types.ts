@@ -43,6 +43,7 @@ export type Entry = {
   appearanceCount: number;
   submittedAt: string;
   approvedAt: string | null;
+  rejectedAt: string | null;
   rejectionNote: string | null;
 };
 

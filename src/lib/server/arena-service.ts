@@ -255,6 +255,7 @@ export function createArenaService(
         appearanceCount: 0,
         submittedAt: currentTime,
         approvedAt: null,
+        rejectedAt: null,
         rejectionNote: null,
       };
 

@@ -102,6 +102,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 16,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-09T18:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -120,6 +121,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 15,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-09T19:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -138,6 +140,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 14,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-09T20:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -156,6 +159,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 15,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-09T21:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -174,6 +178,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 13,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-09T22:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -192,6 +197,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 20,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-01T18:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -210,6 +216,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 19,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-01T19:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
       {
@@ -228,6 +235,7 @@ function createMockArenaState(): ArenaState {
         appearanceCount: 18,
         submittedAt: CURRENT_TIME,
         approvedAt: "2026-03-01T20:00:00.000Z",
+        rejectedAt: null,
         rejectionNote: null,
       },
     ],

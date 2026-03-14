@@ -1,26 +1,35 @@
 @import "tailwindcss";
 
 :root {
-  --bg: #F3F4F6;
+  /* Neo-Brutalism design tokens */
+  --bg: #F5F5F5;
+  --black: #000000;
+  --white: #FFFFFF;
+  --green: #00FF41;
+  --blue: #0033FF;
+  --border: 2px solid #000000;
+  --border-thick: 4px solid #000000;
+  --shadow: 4px 4px 0px #000000;
+  --shadow-lg: 6px 6px 0px #000000;
+  --font-heading: var(--font-display, 'Syne', sans-serif);
+  --font-mono: var(--font-mono-var, 'Space Mono', monospace);
+
+  /* Legacy aliases (used by existing components) */
   --surface: #FFFFFF;
-  --ink: #0A0A0A;
-  --muted: #6B7280;
-  --line: #0A0A0A;
+  --ink: #000000;
+  --muted: #555555;
+  --line: #000000;
   --accent-green: #00FF41;
   --accent-blue: #0033FF;
   --accent-red: #FF3333;
-  --shadow: 6px 6px 0px #0A0A0A;
-  --shadow-sm: 3px 3px 0px #0A0A0A;
-  --shadow-lg: 8px 8px 0px #0A0A0A;
-  --border: 3px solid #0A0A0A;
-  --border-thin: 2px solid #0A0A0A;
+  --shadow-sm: 3px 3px 0px #000000;
 }
 
 @theme inline {
   --color-background: var(--bg);
   --color-foreground: var(--ink);
   --font-sans: var(--font-body);
-  --font-mono: var(--font-mono);
+  --font-mono: var(--font-mono-var);
 }
 
 * {
@@ -32,9 +41,9 @@ html {
 }
 
 body {
-  background: var(--bg);
-  color: var(--ink);
-  font-family: var(--font-body), system-ui, sans-serif;
+  background-color: var(--bg);
+  color: var(--black);
+  font-family: var(--font-mono), 'Space Mono', monospace;
 }
 
 /* Subtle architectural grid */
@@ -44,14 +53,14 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(rgba(10, 10, 10, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(10, 10, 10, 0.04) 1px, transparent 1px);
+    linear-gradient(rgba(0, 0, 0, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
   background-size: 32px 32px;
   z-index: 0;
 }
 
 h1, h2, h3, h4 {
-  font-family: var(--font-display), system-ui, sans-serif;
+  font-family: var(--font-heading), 'Syne', sans-serif;
   letter-spacing: -0.04em;
 }
 
@@ -61,20 +70,104 @@ a {
 }
 
 ::selection {
-  background: var(--accent-green);
-  color: var(--ink);
+  background: var(--green);
+  color: var(--black);
 }
 
-/* Brutalist utility classes */
-.brutal-card {
-  background: var(--surface);
+/* Heading utility */
+.font-heading {
+  font-family: var(--font-heading), 'Syne', sans-serif;
+  font-weight: 900;
+}
+
+/* Neo-Brutalism base component classes */
+.neo-border {
+  border: var(--border);
+}
+
+.neo-border-thick {
+  border: var(--border-thick);
+}
+
+.neo-shadow {
+  box-shadow: var(--shadow);
+}
+
+.neo-shadow-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Button base — new canonical class */
+.btn-neo {
   border: var(--border);
   box-shadow: var(--shadow);
+  font-family: var(--font-mono), 'Space Mono', monospace;
+  font-weight: 700;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  text-decoration: none;
+  border-radius: 0;
+}
+
+.btn-neo:hover, .btn-neo:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px #000000;
+}
+
+.btn-green {
+  background: var(--green);
+  color: var(--black);
+}
+
+.btn-blue {
+  background: var(--blue);
+  color: var(--white);
+}
+
+.btn-outline {
+  background: var(--white);
+  color: var(--black);
+}
+
+/* Status badge */
+.badge {
+  display: inline-block;
+  border: 2px solid var(--black);
+  font-family: var(--font-mono), 'Space Mono', monospace;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.125rem 0.5rem;
+  border-radius: 0;
+}
+
+/* Input base */
+input, textarea, select {
+  border: var(--border);
+  border-radius: 0;
+  font-family: var(--font-mono), 'Space Mono', monospace;
+  padding: 0.5rem 0.75rem;
+  background: var(--white);
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  box-shadow: var(--shadow);
+}
+
+/* Brutal utility classes (legacy — used by existing components) */
+.brutal-card {
+  background: var(--surface);
+  border: 3px solid var(--ink);
+  box-shadow: 6px 6px 0px var(--ink);
   transition: box-shadow 0.15s ease, transform 0.15s ease;
 }
 
 .brutal-card:hover {
-  box-shadow: var(--shadow-lg);
+  box-shadow: 8px 8px 0px var(--ink);
   transform: translate(-2px, -2px);
 }
 
@@ -82,9 +175,9 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: var(--border);
-  box-shadow: var(--shadow-sm);
-  font-family: var(--font-mono), monospace;
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0px var(--ink);
+  font-family: var(--font-mono), 'Space Mono', monospace;
   font-weight: 700;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -92,15 +185,17 @@ a {
   padding: 0.75rem 1.5rem;
   cursor: pointer;
   transition: all 0.1s ease;
+  border-radius: 0;
+  text-decoration: none;
 }
 
 .brutal-btn:hover {
-  box-shadow: 5px 5px 0px #0A0A0A;
+  box-shadow: 5px 5px 0px var(--ink);
   transform: translate(-2px, -2px);
 }
 
 .brutal-btn:active {
-  box-shadow: 1px 1px 0px #0A0A0A;
+  box-shadow: 1px 1px 0px var(--ink);
   transform: translate(2px, 2px);
 }
 
@@ -126,18 +221,19 @@ a {
 
 .brutal-input {
   width: 100%;
-  border: var(--border-thin);
+  border: 2px solid var(--ink);
   background: var(--surface);
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
   color: var(--ink);
   outline: none;
-  font-family: var(--font-body), system-ui, sans-serif;
+  font-family: var(--font-mono), 'Space Mono', monospace;
   transition: box-shadow 0.15s ease;
+  border-radius: 0;
 }
 
 .brutal-input:focus {
-  box-shadow: var(--shadow-sm);
+  box-shadow: 3px 3px 0px var(--ink);
 }
 
 .brutal-input::placeholder {
@@ -145,14 +241,14 @@ a {
 }
 
 .brutal-label {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono), 'Space Mono', monospace;
   font-size: 0.6875rem;
   text-transform: uppercase;
   letter-spacing: 0.28em;
   color: var(--muted);
 }
 
-/* Mobile-first vote card swipe affordance */
+/* Mobile-first vote card layout */
 @media (max-width: 767px) {
   .vote-grid {
     display: flex;
@@ -167,4 +263,14 @@ a {
     grid-template-columns: 1fr 1fr;
     gap: 1.5rem;
   }
+}
+
+/* Leaderboard rank flash animation */
+@keyframes rank-flash {
+  0%, 100% { background: transparent; }
+  50% { background: #00FF4130; }
+}
+
+.animate-rank-flash {
+  animation: rank-flash 1.5s ease-in-out;
 }

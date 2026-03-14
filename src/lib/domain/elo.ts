@@ -29,7 +29,7 @@ export function applyEloResult({
 
   return {
     winnerRating: winnerRating + winnerDelta,
-    loserRating: loserRating + loserDelta,
+    loserRating: Math.max(0, loserRating + loserDelta),
     winnerDelta,
     loserDelta,
   };

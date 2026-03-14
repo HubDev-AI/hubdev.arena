@@ -5,9 +5,11 @@ import type { LeaderboardRow } from "@/lib/server/types";
 export function LeaderboardTable({
   rows,
   compact = false,
+  changedSlugs,
 }: {
   rows: LeaderboardRow[];
   compact?: boolean;
+  changedSlugs?: Set<string>;
 }) {
   return (
     <div className="brutal-card overflow-hidden p-0">
@@ -16,49 +18,95 @@ export function LeaderboardTable({
           Live weekly leaderboard
         </p>
       </div>
-      <div className="divide-y-[2px] divide-[var(--ink)]">
-        {rows.map((row) => (
-          <div
-            key={row.entrySlug}
-            className="grid gap-4 px-5 py-4 transition hover:bg-[var(--bg)] sm:grid-cols-[80px_minmax(0,1fr)_140px]"
-          >
-            <div className="flex items-center gap-3">
-              <span className="text-3xl font-black tracking-tight text-[var(--ink)]">
-                {String(row.rank).padStart(2, "0")}
-              </span>
-              <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                {row.elo}
-              </span>
-            </div>
-            <div>
-              <Link
-                href={`/entry/${row.entrySlug}`}
-                className="text-lg font-black tracking-tight text-[var(--ink)] transition hover:text-[var(--accent-blue)]"
-              >
-                {row.title}
-              </Link>
-              <p className="mt-0.5 text-sm text-[var(--muted)]">by {row.builderName}</p>
-            </div>
-            <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <div className="text-right">
-                <p className="brutal-label">Record</p>
-                <p className="text-sm font-bold text-[var(--ink)]">
-                  {row.wins}W / {row.losses}L
-                </p>
+
+      {/* Desktop table */}
+      <div className="hidden divide-y-[2px] divide-[var(--ink)] sm:block">
+        {rows.map((row) => {
+          const isFirst = row.rank === 1;
+          const isChanged = changedSlugs?.has(row.entrySlug);
+          return (
+            <div
+              key={row.entrySlug}
+              className={[
+                "grid gap-4 px-5 py-4 transition hover:bg-[var(--bg)]",
+                "sm:grid-cols-[80px_minmax(0,1fr)_140px]",
+                isFirst ? "border-l-[4px] border-l-[var(--accent-green)]" : "",
+                isChanged ? "animate-rank-flash" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-black tracking-tight text-[var(--ink)]">
+                  {String(row.rank).padStart(2, "0")}
+                </span>
+                <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                  {row.elo}
+                </span>
               </div>
-              {!compact ? (
-                <a
-                  href={row.liveUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2"
+              <div>
+                <Link
+                  href={`/entry/${row.entrySlug}`}
+                  className="text-lg font-black tracking-tight text-[var(--ink)] transition hover:text-[var(--accent-blue)]"
                 >
-                  Open
-                </a>
-              ) : null}
+                  {row.title}
+                </Link>
+                <p className="mt-0.5 text-sm text-[var(--muted)]">by {row.builderName}</p>
+              </div>
+              <div className="flex items-center justify-between gap-3 sm:justify-end">
+                <div className="text-right">
+                  <p className="brutal-label">Record</p>
+                  <p className="text-sm font-bold text-[var(--ink)]">
+                    {row.wins}W / {row.losses}L
+                  </p>
+                </div>
+                {!compact ? (
+                  <a
+                    href={row.liveUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2"
+                  >
+                    Open
+                  </a>
+                ) : null}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
+      </div>
+
+      {/* Mobile condensed */}
+      <div className="divide-y-[2px] divide-[var(--ink)] sm:hidden">
+        {rows.map((row) => {
+          const isFirst = row.rank === 1;
+          const isChanged = changedSlugs?.has(row.entrySlug);
+          return (
+            <div
+              key={row.entrySlug}
+              className={[
+                "flex items-center gap-3 px-4 py-3 transition hover:bg-[var(--bg)]",
+                isFirst ? "border-l-[4px] border-l-[var(--accent-green)]" : "",
+                isChanged ? "animate-rank-flash" : "",
+              ]
+                .filter(Boolean)
+                .join(" ")}
+            >
+              <span className="w-8 text-xl font-black tracking-tight text-[var(--ink)]">
+                {row.rank}
+              </span>
+              <div className="min-w-0 flex-1">
+                <Link
+                  href={`/entry/${row.entrySlug}`}
+                  className="block truncate font-black tracking-tight text-[var(--ink)] hover:text-[var(--accent-blue)] transition-colors"
+                >
+                  {row.title}
+                </Link>
+              </div>
+              <span className="font-mono text-sm font-bold text-[var(--ink)]">{row.elo}</span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

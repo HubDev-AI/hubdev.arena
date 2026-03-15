@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { BuilderSession } from "@/lib/server/auth";
 import { LogoutButton } from "@/components/logout-button";
 
-export function SiteHeader({ session }: { session: BuilderSession | null }) {
+export function SiteHeader({ session, dataMode }: { session: BuilderSession | null; dataMode?: string }) {
   return (
     <header className="sticky top-0 z-40 border-b-[3px] border-[var(--ink)] bg-[var(--surface)]">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
@@ -59,7 +59,7 @@ export function SiteHeader({ session }: { session: BuilderSession | null }) {
                   Admin
                 </Link>
               ) : null}
-              <LogoutButton />
+              <LogoutButton dataMode={dataMode} />
             </>
           ) : (
             <Link

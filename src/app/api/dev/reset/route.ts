@@ -4,8 +4,8 @@ import { getDataMode } from "@/lib/env";
 import { resetMockArenaRepository } from "@/lib/server/mock-seed";
 
 export async function POST() {
-  if (getDataMode() !== "mock") {
-    return NextResponse.json({ error: "Mock reset is disabled." }, { status: 404 });
+  if ((process.env.NODE_ENV as string) === "production" || getDataMode() !== "mock") {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   resetMockArenaRepository();

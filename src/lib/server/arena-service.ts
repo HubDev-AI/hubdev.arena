@@ -35,6 +35,7 @@ type ReviewEntryInput = {
   adminEmail: string;
   entryId: string;
   decision: "approved" | "rejected";
+  rejectionNote?: string;
 };
 
 type OpenVotingInput = {
@@ -253,6 +254,7 @@ export function createArenaService(
         wins: 0,
         losses: 0,
         appearanceCount: 0,
+        rejectionNote: null,
         submittedAt: currentTime,
         approvedAt: null,
       };
@@ -320,7 +322,7 @@ export function createArenaService(
       return repository.saveWeek(week);
     },
 
-    async reviewEntry({ adminEmail, entryId, decision }: ReviewEntryInput) {
+    async reviewEntry({ adminEmail, entryId, decision, rejectionNote }: ReviewEntryInput) {
       await assertAdmin(adminEmail);
 
       const currentTime = now().toISOString();
@@ -343,6 +345,7 @@ export function createArenaService(
 
       entry.status = decision;
       entry.approvedAt = decision === "approved" ? currentTime : null;
+      entry.rejectionNote = decision === "rejected" ? (rejectionNote ?? null) : null;
       return repository.saveEntry(entry);
     },
 
@@ -422,6 +425,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId,
           fingerprintHash,
           votesCast: 0,
@@ -444,8 +448,8 @@ export function createArenaService(
           sessionVotes.length === 0
             ? []
             : [
-                sessionVotes[sessionVotes.length - 1].winnerEntryId,
-                sessionVotes[sessionVotes.length - 1].loserEntryId,
+                sessionVotes[sessionVotes.length - 1]!.winnerEntryId,
+                sessionVotes[sessionVotes.length - 1]!.loserEntryId,
               ],
         random,
       });
@@ -518,6 +522,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId: input.cookieId,
           fingerprintHash: input.fingerprintHash,
           votesCast: 0,

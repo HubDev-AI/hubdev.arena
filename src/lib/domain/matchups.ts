@@ -22,7 +22,7 @@ export function generateUniqueMatchups(entryIds: string[]) {
       opponentIndex < uniqueEntryIds.length;
       opponentIndex += 1
     ) {
-      pairs.push([uniqueEntryIds[index], uniqueEntryIds[opponentIndex]]);
+      pairs.push([uniqueEntryIds[index]!, uniqueEntryIds[opponentIndex]!]);
     }
   }
 

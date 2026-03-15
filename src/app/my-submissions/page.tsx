@@ -36,12 +36,9 @@ export default async function MySubmissionsPage() {
                     {group.week.themeTitle}
                   </h2>
                 </div>
-                <Link
-                  href={`/admin/weeks/${group.week.slug}`}
-                  className="rounded-full border border-[var(--line)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ink)] transition hover:border-[var(--ink)] hover:bg-[var(--paper)]"
-                >
-                  Admin view
-                </Link>
+                <span className="rounded-full bg-[var(--acid)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--ink)]">
+                  {group.week.slug}
+                </span>
               </div>
               <div className="mt-6 grid gap-4">
                 {group.entries.map((entry) => (

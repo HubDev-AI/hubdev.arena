@@ -21,6 +21,7 @@ type ProfileRow = {
   auth_provider: string;
   founding_builder: boolean;
   created_at: string;
+  email?: string;
 };
 
 type WeekRow = {
@@ -68,6 +69,7 @@ type MatchupRow = {
 type VoterSessionRow = {
   id: string;
   week_id: string;
+  user_id: string | null;
   cookie_id: string;
   fingerprint_hash: string;
   votes_cast: number;
@@ -90,6 +92,7 @@ type VoteRow = {
 function toProfile(row: ProfileRow): Profile {
   return {
     id: row.id,
+    email: row.email,
     displayName: row.display_name,
     username: row.username,
     avatarUrl: row.avatar_url,
@@ -129,6 +132,7 @@ function toEntry(row: EntryRow): Entry {
     wins: row.wins,
     losses: row.losses,
     appearanceCount: row.appearance_count,
+    rejectionNote: row.rejection_note,
     submittedAt: row.submitted_at,
     approvedAt: row.approved_at,
   };
@@ -150,6 +154,7 @@ function toVoterSession(row: VoterSessionRow): VoterSession {
   return {
     id: row.id,
     weekId: row.week_id,
+    userId: row.user_id,
     cookieId: row.cookie_id,
     fingerprintHash: row.fingerprint_hash,
     votesCast: row.votes_cast,
@@ -285,7 +290,10 @@ export function createSupabaseArenaRepository(
       const data = throwOnError(
         await supabase.from("entries").select("*").in("id", entryIds),
       );
-      return (data as EntryRow[]).map(toEntry);
+      const entries = (data as EntryRow[]).map(toEntry);
+      // Preserve input order — Supabase .in() returns rows in arbitrary order
+      const byId = new Map(entries.map((e) => [e.id, e]));
+      return entryIds.map((id) => byId.get(id)).filter((e): e is Entry => e != null);
     },
 
     async getEntryById(entryId) {
@@ -326,6 +334,7 @@ export function createSupabaseArenaRepository(
             wins: entry.wins,
             losses: entry.losses,
             appearance_count: entry.appearanceCount,
+            rejection_note: entry.rejectionNote,
             submitted_at: entry.submittedAt,
             approved_at: entry.approvedAt,
           })
@@ -407,6 +416,7 @@ export function createSupabaseArenaRepository(
           .upsert({
             id: voterSession.id,
             week_id: voterSession.weekId,
+            user_id: voterSession.userId,
             cookie_id: voterSession.cookieId,
             fingerprint_hash: voterSession.fingerprintHash,
             votes_cast: voterSession.votesCast,

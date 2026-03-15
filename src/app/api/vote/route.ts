@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     const vote = await getVoteEngine().castVote({
-      weekSlug: body.weekSlug!,
+      weekSlug: body.weekSlug,
       matchupId: body.matchupId,
       winnerEntryId: body.winnerEntryId,
       loserEntryId: body.loserEntryId,

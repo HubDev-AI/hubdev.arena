@@ -51,7 +51,7 @@ export default async function LoginPage({
           Production auth is X / Twitter OAuth with magic-link fallback. This local shell ships with mock member profiles so the end-to-end flow for submissions and voting can run without external auth setup.
         </p>
       </div>
-      <div className="rounded-[2rem] border border-[var(--line)] bg-white/86 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
+      <div className="brutal-card p-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
           Demo member profiles
         </p>

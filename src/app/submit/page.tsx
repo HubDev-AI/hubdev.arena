@@ -25,7 +25,7 @@ export default async function SubmitPage() {
 
       {openWeek ? (
         <>
-          <div className="rounded-[2rem] border border-[var(--line)] bg-white/80 p-5">
+          <div className="brutal-card p-5">
             <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
               Open week
             </p>
@@ -37,7 +37,7 @@ export default async function SubmitPage() {
           <SubmitForm weekSlug={openWeek.slug} />
         </>
       ) : (
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white/84 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
+        <div className="brutal-card p-6">
           <p className="text-base leading-7 text-[var(--muted)]">
             No week is currently open for submissions. An admin needs to create or open the next round first.
           </p>

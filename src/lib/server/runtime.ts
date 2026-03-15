@@ -1,17 +1,27 @@
 import { createArenaService } from "@/lib/server/arena-service";
-import { getAdminAllowlist, getDataMode } from "@/lib/env";
+import { getAdminAllowlist, getDataMode, getEnv } from "@/lib/env";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
+import { createSupabaseArenaRepository } from "@/lib/server/supabase-arena-repository";
 
 export function getArenaService() {
   const dataMode = getDataMode();
+  const adminAllowlist = getAdminAllowlist();
 
-  if (dataMode !== "mock") {
+  if (dataMode === "mock") {
+    return createArenaService(getMockArenaRepository(), { adminAllowlist });
+  }
+
+  const env = getEnv();
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
     throw new Error(
-      "Supabase runtime wiring is not configured yet. Set HUBDEV_DATA_MODE=mock for local use.",
+      "Supabase URL and service role key are required when HUBDEV_DATA_MODE=supabase.",
     );
   }
 
-  return createArenaService(getMockArenaRepository(), {
-    adminAllowlist: getAdminAllowlist(),
-  });
+  const repository = createSupabaseArenaRepository(
+    env.NEXT_PUBLIC_SUPABASE_URL,
+    env.SUPABASE_SERVICE_ROLE_KEY,
+  );
+
+  return createArenaService(repository, { adminAllowlist });
 }

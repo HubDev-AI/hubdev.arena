@@ -28,6 +28,10 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
     async listProfiles() {
       return clone(state.profiles);
     },
+    async listProfilesByIds(profileIds) {
+      const lookup = new Set(profileIds);
+      return clone(state.profiles.filter((profile) => lookup.has(profile.id)));
+    },
     async getProfileById(profileId) {
       return clone(state.profiles.find((profile) => profile.id === profileId) ?? null);
     },
@@ -37,6 +41,9 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
     },
     async listWeeks() {
       return clone(state.weeks);
+    },
+    async getWeekById(weekId) {
+      return clone(state.weeks.find((week) => week.id === weekId) ?? null);
     },
     async getWeekBySlug(slug) {
       return clone(state.weeks.find((week) => week.slug === slug) ?? null);
@@ -54,6 +61,9 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
           (entry) => entry.weekId === weekId && entry.builderId === builderId,
         ),
       );
+    },
+    async listAllEntriesByBuilder(builderId) {
+      return clone(state.entries.filter((entry) => entry.builderId === builderId));
     },
     async listEntriesByIds(entryIds) {
       const lookup = new Set(entryIds);

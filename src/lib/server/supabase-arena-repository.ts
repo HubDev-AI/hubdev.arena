@@ -200,6 +200,14 @@ export function createSupabaseArenaRepository(
       return (data as ProfileRow[]).map(toProfile);
     },
 
+    async listProfilesByIds(profileIds) {
+      if (profileIds.length === 0) return [];
+      const data = throwOnError(
+        await supabase.from("profiles").select("*").in("id", profileIds),
+      );
+      return (data as ProfileRow[]).map(toProfile);
+    },
+
     async getProfileById(profileId) {
       const { data, error } = await supabase
         .from("profiles")
@@ -226,6 +234,16 @@ export function createSupabaseArenaRepository(
           .single(),
       );
       return toProfile(data as ProfileRow);
+    },
+
+    async getWeekById(weekId) {
+      const { data, error } = await supabase
+        .from("weeks")
+        .select("*")
+        .eq("id", weekId)
+        .maybeSingle();
+      if (error) throw new Error(error.message);
+      return data ? toWeek(data as WeekRow) : null;
     },
 
     async listWeeks() {
@@ -281,6 +299,13 @@ export function createSupabaseArenaRepository(
           .select("*")
           .eq("week_id", weekId)
           .eq("builder_id", builderId),
+      );
+      return (data as EntryRow[]).map(toEntry);
+    },
+
+    async listAllEntriesByBuilder(builderId) {
+      const data = throwOnError(
+        await supabase.from("entries").select("*").eq("builder_id", builderId),
       );
       return (data as EntryRow[]).map(toEntry);
     },

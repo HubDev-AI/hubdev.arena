@@ -1,3 +1,5 @@
+import { createClient } from "@supabase/supabase-js";
+
 import { getDataMode, getEnv } from "@/lib/env";
 import { getArenaService } from "@/lib/server/runtime";
 
@@ -45,13 +47,76 @@ async function callSec4<T>(
   return (await response.json()) as T;
 }
 
+async function castVoteViaRpc(input: CastVoteInput) {
+  const env = getEnv();
+  if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const supabase = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+
+  // Resolve week ID from slug
+  const { data: week, error: weekError } = await supabase
+    .from("weeks")
+    .select("id")
+    .eq("slug", input.weekSlug)
+    .single();
+  if (weekError || !week) throw new Error(`Week ${input.weekSlug} not found.`);
+
+  // Ensure voter session exists
+  const { data: existingSession } = await supabase
+    .from("voter_sessions")
+    .select("id")
+    .eq("week_id", week.id)
+    .eq("cookie_id", input.cookieId)
+    .maybeSingle();
+
+  let sessionId: string;
+  if (existingSession) {
+    sessionId = existingSession.id;
+  } else {
+    const { data: newSession, error: sessionError } = await supabase
+      .from("voter_sessions")
+      .insert({
+        week_id: week.id,
+        cookie_id: input.cookieId,
+        fingerprint_hash: input.fingerprintHash,
+      })
+      .select("id")
+      .single();
+    if (sessionError || !newSession) throw new Error("Failed to create voter session.");
+    sessionId = newSession.id;
+  }
+
+  // Call the transactional PG function
+  const { data, error } = await supabase.rpc("cast_vote", {
+    p_week_id: week.id,
+    p_matchup_id: input.matchupId,
+    p_winner_entry_id: input.winnerEntryId,
+    p_loser_entry_id: input.loserEntryId,
+    p_voter_session_id: sessionId,
+    p_fingerprint_hash: input.fingerprintHash,
+    p_idempotency_key: input.idempotencyKey,
+  });
+
+  if (error) throw new Error(error.message);
+
+  const row = Array.isArray(data) ? data[0] : data;
+  return {
+    vote: { id: row.vote_id },
+    winner: { eloRating: row.winner_new_elo, wins: row.winner_wins },
+    loser: { eloRating: row.loser_new_elo, losses: row.loser_losses },
+  };
+}
+
 export function getVoteEngine() {
   const dataMode = getDataMode();
   const hasSec4 = Boolean(getEnv().SEC4_INTERNAL_BASE_URL && getEnv().SEC4_INTERNAL_TOKEN);
 
-  if (dataMode === "mock" || !hasSec4) {
+  if (dataMode === "mock") {
     const service = getArenaService();
-
     return {
       getNextMatchup(input: NextVoteInput) {
         return service.getVoteDeck(input);
@@ -66,42 +131,60 @@ export function getVoteEngine() {
         return service.openVoting({ weekSlug, adminEmail });
       },
       lockWeek(weekSlug: string, adminEmail: string) {
-        return service.setWeekStatus({
-          weekSlug,
-          adminEmail,
-          action: "lock_results",
+        return service.setWeekStatus({ weekSlug, adminEmail, action: "lock_results" });
+      },
+    };
+  }
+
+  if (hasSec4) {
+    return {
+      getNextMatchup(input: NextVoteInput) {
+        return callSec4("/internal/v1/vote/next", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+      castVote(input: CastVoteInput) {
+        return callSec4("/internal/v1/vote", {
+          method: "POST",
+          body: JSON.stringify(input),
+        });
+      },
+      getLeaderboard(weekSlug: string) {
+        return callSec4(`/internal/v1/leaderboard?week=${encodeURIComponent(weekSlug)}`);
+      },
+      openVoting(weekSlug: string, adminEmail: string) {
+        return callSec4("/internal/v1/admin/weeks/open-voting", {
+          method: "POST",
+          body: JSON.stringify({ weekSlug, adminEmail }),
+        });
+      },
+      lockWeek(weekSlug: string, adminEmail: string) {
+        return callSec4("/internal/v1/admin/weeks/lock", {
+          method: "POST",
+          body: JSON.stringify({ weekSlug, adminEmail }),
         });
       },
     };
   }
 
+  // Supabase mode without sec4 — use transactional PG function for votes
+  const service = getArenaService();
   return {
     getNextMatchup(input: NextVoteInput) {
-      return callSec4("/internal/v1/vote/next", {
-        method: "POST",
-        body: JSON.stringify(input),
-      });
+      return service.getVoteDeck(input);
     },
     castVote(input: CastVoteInput) {
-      return callSec4("/internal/v1/vote", {
-        method: "POST",
-        body: JSON.stringify(input),
-      });
+      return castVoteViaRpc(input);
     },
     getLeaderboard(weekSlug: string) {
-      return callSec4(`/internal/v1/leaderboard?week=${encodeURIComponent(weekSlug)}`);
+      return service.getLeaderboard({ weekSlug });
     },
     openVoting(weekSlug: string, adminEmail: string) {
-      return callSec4("/internal/v1/admin/weeks/open-voting", {
-        method: "POST",
-        body: JSON.stringify({ weekSlug, adminEmail }),
-      });
+      return service.openVoting({ weekSlug, adminEmail });
     },
     lockWeek(weekSlug: string, adminEmail: string) {
-      return callSec4("/internal/v1/admin/weeks/lock", {
-        method: "POST",
-        body: JSON.stringify({ weekSlug, adminEmail }),
-      });
+      return service.setWeekStatus({ weekSlug, adminEmail, action: "lock_results" });
     },
   };
 }

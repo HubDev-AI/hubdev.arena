@@ -102,94 +102,70 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="space-y-5">
-          <div className="flex items-end justify-between gap-4">
-            <div>
-              <p className="brutal-label">Featured entrants</p>
-              <h2 className="mt-1 text-2xl font-black uppercase tracking-tight text-[var(--ink)] sm:text-3xl">
-                Current contenders
-              </h2>
-            </div>
-            <Link href="/leaderboard" className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2">
-              Full board
-            </Link>
-          </div>
-
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {featuredEntries.map((entry) => (
-              <article key={entry.entrySlug} className="brutal-card overflow-hidden">
-                <EntryMedia assetPath={entry.demoAssetUrl} title={entry.title} className="h-48" />
-                <div className="space-y-3 border-t-[3px] border-[var(--ink)] p-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="brutal-label">Rank {entry.rank}</span>
-                    <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                      Elo {entry.elo}
-                    </span>
-                  </div>
-                  <Link
-                    href={`/entry/${entry.entrySlug}`}
-                    className="block text-xl font-black tracking-tight text-[var(--ink)] transition hover:text-[var(--accent-blue)]"
-                  >
-                    {entry.title}
-                  </Link>
-                  <p className="text-sm text-[var(--muted)]">by {entry.builderName}</p>
-                  <a
-                    href={entry.liveUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2"
-                  >
-                    Open app
-                  </a>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-
-        <div className="space-y-5">
+      <section className="space-y-5">
+        <div className="flex items-end justify-between gap-4">
           <div>
-            <p className="brutal-label">Validation bar</p>
+            <p className="brutal-label">Featured entrants</p>
             <h2 className="mt-1 text-2xl font-black uppercase tracking-tight text-[var(--ink)] sm:text-3xl">
-              MVP thresholds
+              Current contenders
             </h2>
           </div>
-          <div className="brutal-card space-y-0 divide-y-[2px] divide-[var(--ink)] p-0">
-            {[
-              "Week 1: 15 approved submissions",
-              "Week 1: 100 unique voters",
-              "Average voter: 8 votes",
-              "Week 3 builder retention: 60%",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3 px-4 py-3">
-                <span className="h-3 w-3 border-[2px] border-[var(--ink)] bg-[var(--accent-green)]" />
-                <p className="font-mono text-xs leading-6 text-[var(--muted)]">{item}</p>
+          <Link href="/leaderboard" className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2">
+            Full board
+          </Link>
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {featuredEntries.map((entry) => (
+            <article key={entry.entrySlug} className="brutal-card overflow-hidden">
+              <EntryMedia assetPath={entry.demoAssetUrl} title={entry.title} className="h-48" />
+              <div className="space-y-3 border-t-[3px] border-[var(--ink)] p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="brutal-label">Rank {entry.rank}</span>
+                  <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                    Elo {entry.elo}
+                  </span>
+                </div>
+                <Link
+                  href={`/entry/${entry.entrySlug}`}
+                  className="block text-xl font-black tracking-tight text-[var(--ink)] transition hover:text-[var(--accent-blue)]"
+                >
+                  {entry.title}
+                </Link>
+                <p className="text-sm text-[var(--muted)]">by {entry.builderName}</p>
+                <a
+                  href={entry.liveUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2"
+                >
+                  Open app
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {pastWinners.length > 0 ? (
+          <div className="brutal-card divide-y-[2px] divide-[var(--ink)] p-0">
+            <div className="px-4 py-3">
+              <p className="brutal-label">Past winners</p>
+            </div>
+            {pastWinners.map((item) => (
+              <div key={item.week.slug} className="flex items-center justify-between gap-4 px-4 py-3">
+                <div>
+                  <p className="text-base font-black tracking-tight text-[var(--ink)]">
+                    {item.topEntry?.title}
+                  </p>
+                  <p className="text-xs text-[var(--muted)]">{item.week.themeTitle}</p>
+                </div>
+                <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                  Winner
+                </span>
               </div>
             ))}
           </div>
-
-          {pastWinners.length > 0 ? (
-            <div className="brutal-card divide-y-[2px] divide-[var(--ink)] p-0">
-              <div className="px-4 py-3">
-                <p className="brutal-label">Past winners</p>
-              </div>
-              {pastWinners.map((item) => (
-                <div key={item.week.slug} className="flex items-center justify-between gap-4 px-4 py-3">
-                  <div>
-                    <p className="text-base font-black tracking-tight text-[var(--ink)]">
-                      {item.topEntry?.title}
-                    </p>
-                    <p className="text-xs text-[var(--muted)]">{item.week.themeTitle}</p>
-                  </div>
-                  <span className="border-[2px] border-[var(--ink)] bg-[var(--accent-green)] px-2 py-1 font-mono text-[9px] font-bold uppercase tracking-wider text-[var(--ink)]">
-                    Winner
-                  </span>
-                </div>
-              ))}
-            </div>
-          ) : null}
-        </div>
+        ) : null}
       </section>
 
       {/* Leaderboard preview */}

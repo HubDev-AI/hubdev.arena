@@ -55,7 +55,7 @@ export default async function LoginPage({
                 builders={(await getMockArenaRepository().listProfiles()).map((profile) => ({
                   id: profile.id,
                   displayName: profile.displayName,
-                  email: profile.email ?? "unknown@example.com",
+                  email: profile.email ?? "",
                   isAdmin: profile.email === "admin@example.com",
                 }))}
                 redirectTo={redirectTo}

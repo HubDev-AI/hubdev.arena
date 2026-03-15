@@ -9,7 +9,7 @@ const voteSchema = z.object({
   winnerEntryId: z.string().min(1),
   loserEntryId: z.string().min(1),
   idempotencyKey: z.string().min(8),
-  weekSlug: z.string().min(1).optional(),
+  weekSlug: z.string().min(1),
 });
 
 export async function POST(request: Request) {
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
     }
 
     const vote = await getVoteEngine().castVote({
-      weekSlug: body.weekSlug ?? "agents-in-the-arena",
+      weekSlug: body.weekSlug!,
       matchupId: body.matchupId,
       winnerEntryId: body.winnerEntryId,
       loserEntryId: body.loserEntryId,

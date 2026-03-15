@@ -41,6 +41,7 @@ export type Entry = {
   wins: number;
   losses: number;
   appearanceCount: number;
+  rejectionNote: string | null;
   submittedAt: string;
   approvedAt: string | null;
 };
@@ -58,6 +59,7 @@ export type Matchup = {
 export type VoterSession = {
   id: string;
   weekId: string;
+  userId: string | null;
   cookieId: string;
   fingerprintHash: string;
   votesCast: number;

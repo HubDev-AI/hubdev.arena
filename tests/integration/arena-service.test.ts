@@ -54,6 +54,7 @@ function makeApprovedEntry(index: number, overrides: Partial<Entry> = {}): Entry
     wins: 0,
     losses: 0,
     appearanceCount: 0,
+    rejectionNote: null,
     submittedAt: NOW.toISOString(),
     approvedAt: new Date(NOW.getTime() + index * 1_000).toISOString(),
     ...overrides,
@@ -66,10 +67,10 @@ function makeMatchups(entries: Entry[]): Matchup[] {
   for (let index = 0; index < entries.length; index += 1) {
     for (let opponentIndex = index + 1; opponentIndex < entries.length; opponentIndex += 1) {
       matchups.push({
-        id: `matchup-${entries[index].id}-${entries[opponentIndex].id}`,
+        id: `matchup-${entries[index]!.id}-${entries[opponentIndex]!.id}`,
         weekId: "week-1",
-        entryAId: entries[index].id,
-        entryBId: entries[opponentIndex].id,
+        entryAId: entries[index]!.id,
+        entryBId: entries[opponentIndex]!.id,
         exposureCount: 0,
         voteCount: 0,
         createdAt: NOW.toISOString(),
@@ -106,6 +107,7 @@ function makeSession(votesCast = 0): VoterSession {
   return {
     id: "session-1",
     weekId: "week-1",
+    userId: null,
     cookieId: "cookie-1",
     fingerprintHash: "fp-1",
     votesCast,
@@ -208,7 +210,7 @@ describe("ArenaService", () => {
     expect(result.matchupsCreated).toBe(1);
     expect(week?.status).toBe("voting_open");
     expect(matchups).toHaveLength(1);
-    expect(matchups[0]).toMatchObject({
+    expect(matchups[0]!).toMatchObject({
       entryAId: "entry-pending-1",
       entryBId: "entry-pending-2",
     });
@@ -229,7 +231,7 @@ describe("ArenaService", () => {
 
     const result = await service.castVote({
       weekSlug: "agents-in-the-arena",
-      matchupId: matchups[0].id,
+      matchupId: matchups[0]!.id,
       winnerEntryId: "entry-1",
       loserEntryId: "entry-2",
       cookieId: "cookie-1",
@@ -243,7 +245,7 @@ describe("ArenaService", () => {
     await expect(
       service.castVote({
         weekSlug: "agents-in-the-arena",
-        matchupId: matchups[0].id,
+        matchupId: matchups[0]!.id,
         winnerEntryId: "entry-1",
         loserEntryId: "entry-2",
         cookieId: "cookie-1",
@@ -255,7 +257,7 @@ describe("ArenaService", () => {
     await expect(
       service.castVote({
         weekSlug: "agents-in-the-arena",
-        matchupId: matchups[0].id,
+        matchupId: matchups[0]!.id,
         winnerEntryId: "entry-1",
         loserEntryId: "entry-2",
         cookieId: "cookie-1",
@@ -295,9 +297,9 @@ describe("ArenaService", () => {
     await expect(
       shortWindowService.castVote({
         weekSlug: "agents-in-the-arena",
-        matchupId: shortWindowMatchups[30].id,
-        winnerEntryId: shortWindowMatchups[30].entryAId,
-        loserEntryId: shortWindowMatchups[30].entryBId,
+        matchupId: shortWindowMatchups[30]!.id,
+        winnerEntryId: shortWindowMatchups[30]!.entryAId,
+        loserEntryId: shortWindowMatchups[30]!.entryBId,
         cookieId: "cookie-1",
         fingerprintHash: "fp-1",
         idempotencyKey: "short-window-limit",
@@ -330,9 +332,9 @@ describe("ArenaService", () => {
     await expect(
       dailyService.castVote({
         weekSlug: "agents-in-the-arena",
-        matchupId: dailyMatchups[100].id,
-        winnerEntryId: dailyMatchups[100].entryAId,
-        loserEntryId: dailyMatchups[100].entryBId,
+        matchupId: dailyMatchups[100]!.id,
+        winnerEntryId: dailyMatchups[100]!.entryAId,
+        loserEntryId: dailyMatchups[100]!.entryBId,
         cookieId: "cookie-1",
         fingerprintHash: "fp-1",
         idempotencyKey: "daily-limit",
@@ -381,7 +383,7 @@ describe("ArenaService", () => {
       "entry-1",
       "entry-2",
     ]);
-    expect(leaderboard[0].rank).toBe(1);
-    expect(leaderboard[0].wins).toBe(1);
+    expect(leaderboard[0]!.rank).toBe(1);
+    expect(leaderboard[0]!.wins).toBe(1);
   });
 });

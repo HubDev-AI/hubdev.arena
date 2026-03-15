@@ -3,8 +3,29 @@ import { NextResponse, type NextRequest } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 
+function getSafeRedirectUrl(request: NextRequest, path: string): string {
+  const { origin } = new URL(request.url);
+  const isLocal = process.env.NODE_ENV === "development";
+
+  if (isLocal) {
+    return `${origin}${path}`;
+  }
+
+  // Validate x-forwarded-host against known site URL to prevent open redirects
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  if (forwardedHost) {
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+    const allowedHost = siteUrl ? new URL(siteUrl).hostname : null;
+    if (allowedHost && forwardedHost === allowedHost) {
+      return `https://${forwardedHost}${path}`;
+    }
+  }
+
+  return `${origin}${path}`;
+}
+
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
   const tokenHash = searchParams.get("token_hash");
   const type = searchParams.get("type") as EmailOtpType | null;
@@ -13,29 +34,19 @@ export async function GET(request: NextRequest) {
 
   const supabase = await createClient();
 
-  // OAuth code exchange (Twitter, etc.)
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const forwardedHost = request.headers.get("x-forwarded-host");
-      const isLocal = process.env.NODE_ENV === "development";
-      if (isLocal) {
-        return NextResponse.redirect(`${origin}${safeNext}`);
-      }
-      if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${safeNext}`);
-      }
-      return NextResponse.redirect(`${origin}${safeNext}`);
+      return NextResponse.redirect(getSafeRedirectUrl(request, safeNext));
     }
   }
 
-  // Email magic link OTP verification
   if (tokenHash && type) {
     const { error } = await supabase.auth.verifyOtp({ type, token_hash: tokenHash });
     if (!error) {
-      return NextResponse.redirect(`${origin}${safeNext}`);
+      return NextResponse.redirect(getSafeRedirectUrl(request, safeNext));
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
+  return NextResponse.redirect(getSafeRedirectUrl(request, "/login?error=auth_failed"));
 }

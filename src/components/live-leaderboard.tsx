@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { createClient } from "@/lib/supabase/browser";
 import type { LeaderboardRow } from "@/lib/server/types";
 
 export function LiveLeaderboard({
@@ -17,17 +18,37 @@ export function LiveLeaderboard({
   const [rows, setRows] = useState(initialRows);
 
   useEffect(() => {
-    const timer = window.setInterval(async () => {
+    async function fetchLeaderboard() {
       const response = await fetch(`/api/leaderboard?week=${encodeURIComponent(weekSlug)}`);
-      if (!response.ok) {
-        return;
+      if (response.ok) {
+        const nextRows = (await response.json()) as LeaderboardRow[];
+        setRows(nextRows);
       }
+    }
 
-      const nextRows = (await response.json()) as LeaderboardRow[];
-      setRows(nextRows);
-    }, 8_000);
+    const supabase = createClient();
+    const channel = supabase
+      .channel(`leaderboard-${weekSlug}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "entries" },
+        () => {
+          void fetchLeaderboard();
+        },
+      )
+      .subscribe();
 
-    return () => window.clearInterval(timer);
+    // Fall back to polling if Realtime drops
+    const fallbackTimer = window.setInterval(() => {
+      if (channel.state !== "joined") {
+        void fetchLeaderboard();
+      }
+    }, 30_000);
+
+    return () => {
+      window.clearInterval(fallbackTimer);
+      void supabase.removeChannel(channel);
+    };
   }, [weekSlug]);
 
   return <LeaderboardTable rows={rows} compact={compact} />;

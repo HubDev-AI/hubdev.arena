@@ -612,7 +612,8 @@ export function createArenaService(
       const approvedEntries = (await repository.listEntriesByWeek(week.id)).filter(
         (entry) => entry.status === "approved",
       );
-      const profiles = await repository.listProfiles();
+      const builderIds = [...new Set(approvedEntries.map((e) => e.builderId))];
+      const profiles = await repository.listProfilesByIds(builderIds);
       const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
 
       return sortLeaderboardEntries(approvedEntries).map((entry, index) => {
@@ -643,9 +644,7 @@ export function createArenaService(
         return null;
       }
 
-      const week = (await repository.listWeeks()).find(
-        (candidate) => candidate.id === entry.weekId,
-      );
+      const week = await repository.getWeekById(entry.weekId);
       ensure(week, `Week ${entry.weekId} was not found.`);
       const builder = await loadProfile(entry.builderId);
 
@@ -657,15 +656,23 @@ export function createArenaService(
     },
 
     async getMySubmissions(builderId: string) {
-      const weeks = await repository.listWeeks();
-      const entries = await Promise.all(
-        weeks.map(async (week) => ({
-          week,
-          entries: await repository.listEntriesByBuilder(week.id, builderId),
-        })),
-      );
+      const allEntries = await repository.listAllEntriesByBuilder(builderId);
+      if (allEntries.length === 0) return [];
 
-      return entries.filter((group) => group.entries.length > 0);
+      const weekIds = [...new Set(allEntries.map((e) => e.weekId))];
+      const weeks = await repository.listWeeks();
+      const weeksById = new Map(weeks.map((w) => [w.id, w]));
+
+      return weekIds
+        .map((weekId) => {
+          const week = weeksById.get(weekId);
+          if (!week) return null;
+          return {
+            week,
+            entries: allEntries.filter((e) => e.weekId === weekId),
+          };
+        })
+        .filter((group): group is NonNullable<typeof group> => group !== null && group.entries.length > 0);
     },
 
     async listPastWinners(limit = 3) {
@@ -673,14 +680,41 @@ export function createArenaService(
         ["locked", "archived"].includes(week.status),
       );
 
-      const winners = await Promise.all(
-        weeks.map(async (week) => ({
-          week,
-          topEntry: (await this.getLeaderboard({ weekSlug: week.slug }))[0] ?? null,
-        })),
+      const pastWeeks = weeks.slice(0, limit);
+      const allEntries = await Promise.all(
+        pastWeeks.map((week) => repository.listEntriesByWeek(week.id)),
       );
 
-      return winners.filter((week) => week.topEntry).slice(0, limit);
+      const topEntries = allEntries.map((entries) => {
+        const approved = entries.filter((e) => e.status === "approved");
+        return sortLeaderboardEntries(approved)[0] ?? null;
+      });
+
+      const builderIds = [...new Set(topEntries.filter(Boolean).map((e) => e!.builderId))];
+      const profiles = await repository.listProfilesByIds(builderIds);
+      const profilesById = new Map(profiles.map((p) => [p.id, p]));
+
+      return pastWeeks
+        .map((week, index) => {
+          const entry = topEntries[index];
+          if (!entry) return null;
+          const builder = profilesById.get(entry.builderId);
+          return {
+            week,
+            topEntry: {
+              rank: 1,
+              entrySlug: entry.slug,
+              title: entry.title,
+              builderName: builder?.displayName ?? "Unknown",
+              liveUrl: entry.liveUrl,
+              demoAssetUrl: entry.demoAssetPath,
+              elo: entry.eloRating,
+              wins: entry.wins,
+              losses: entry.losses,
+            } satisfies LeaderboardRow,
+          };
+        })
+        .filter((w): w is NonNullable<typeof w> => w !== null);
     },
   };
 }

@@ -12,7 +12,7 @@ export default async function VotePage() {
   if (!session) {
     return (
       <div className="mx-auto flex w-full max-w-4xl flex-col gap-6 px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white/88 p-8 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
+        <div className="brutal-card p-8">
           <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">
             Authenticated voting
           </p>

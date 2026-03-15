@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
-import { Space_Mono, Inter, Syne } from "next/font/google";
+import { Space_Mono, Outfit, Syne } from "next/font/google";
 
 import { SiteHeader } from "@/components/site-header";
 import { getBuilderSession } from "@/lib/server/auth";
@@ -11,7 +11,7 @@ const displayFont = Syne({
   subsets: ["latin"],
 });
 
-const bodyFont = Inter({
+const bodyFont = Outfit({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800", "900"],

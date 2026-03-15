@@ -41,7 +41,7 @@ export default async function Home() {
               HubDev Arena
             </h1>
             <p className="mt-4 max-w-2xl text-base leading-7 text-gray-400">
-              Weekly battles for AI-built apps
+              Build with AI tools. Submit your entry. Fight for the top spot through head-to-head voting.
             </p>
           </div>
           <div className="mt-6 flex flex-wrap gap-3">

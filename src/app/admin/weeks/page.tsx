@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-import { createWeekAction } from "@/app/admin/actions";
 import { requireAdminSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
+
+import { CreateWeekForm } from "./create-week-form";
 
 export const dynamic = "force-dynamic";
 
@@ -48,58 +49,7 @@ export default async function AdminWeeksPage() {
         </div>
       </div>
 
-      <form
-        action={createWeekAction}
-        className="space-y-4 rounded-[2rem] border border-[var(--line)] bg-white/86 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]"
-      >
-        <div>
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-            Create week
-          </p>
-          <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-[var(--ink)]">
-            Seed the next round
-          </h2>
-        </div>
-        {[
-          ["slug", "Slug", "week-1"],
-          ["themeTitle", "Theme title", "Your theme title"],
-          ["timezone", "Timezone", "America/Los_Angeles"],
-          ["submissionOpenAt", "Submission open (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
-          ["submissionCloseAt", "Submission close (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
-          ["votingOpenAt", "Voting open (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
-          ["votingCloseAt", "Voting close (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
-        ].map(([name, label, placeholder]) => (
-          <label key={name} className="space-y-2">
-            <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-              {label}
-            </span>
-            <input
-              required
-              name={name}
-              className="w-full rounded-[1.3rem] border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--cobalt)]"
-              placeholder={placeholder}
-            />
-          </label>
-        ))}
-        <label className="space-y-2">
-          <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-            Theme description
-          </span>
-          <textarea
-            required
-            name="themeDescription"
-            rows={4}
-            className="w-full rounded-[1.3rem] border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--cobalt)]"
-            placeholder="Describe the theme for this week's challenge..."
-          />
-        </label>
-        <button
-          type="submit"
-          className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
-        >
-          Create draft week
-        </button>
-      </form>
+      <CreateWeekForm />
     </div>
   );
 }

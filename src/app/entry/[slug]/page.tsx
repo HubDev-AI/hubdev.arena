@@ -67,7 +67,7 @@ export default async function EntryDetailPage({
               href={detail.entry.liveUrl}
               target="_blank"
               rel="noreferrer"
-              className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
+              className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--accent-blue)] hover:text-white"
             >
               Open app
             </a>

@@ -27,8 +27,8 @@ export default function RulesPage() {
             body: "All approved entries start at 1200 ELO with K = 24. Every vote updates both entries. Rankings break ties by wins, then fewer losses, then earlier approval time.",
           },
           {
-            title: "Admin control is intentionally simple",
-            body: "Admin access uses an allowlisted email env var. Admins create weeks, approve or reject entries, open voting, lock results, and seed founding builders.",
+            title: "Every round is curated",
+            body: "Each weekly round has a theme set by the HubDev team. Submissions are reviewed and approved before entering voting. Results are locked at the end of the voting window and published on the leaderboard.",
           },
         ].map((item) => (
           <section

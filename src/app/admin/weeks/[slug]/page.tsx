@@ -40,7 +40,7 @@ export default async function AdminWeekDetailPage({
               <input type="hidden" name="weekSlug" value={detail.week.slug} />
               <button
                 type="submit"
-                className="w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
+                className="w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--accent-blue)] hover:text-white"
               >
                 Open submissions
               </button>
@@ -52,7 +52,7 @@ export default async function AdminWeekDetailPage({
               <input type="hidden" name="weekSlug" value={detail.week.slug} />
               <button
                 type="submit"
-                className="w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
+                className="w-full rounded-full bg-[var(--ink)] px-4 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--accent-blue)] hover:text-white"
               >
                 Generate matchups + open voting
               </button>
@@ -135,7 +135,7 @@ export default async function AdminWeekDetailPage({
                       <input type="hidden" name="decision" value="approved" />
                       <button
                         type="submit"
-                        className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
+                        className="rounded-full bg-[var(--ink)] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--paper)] transition hover:bg-[var(--accent-blue)] hover:text-white"
                       >
                         Approve
                       </button>

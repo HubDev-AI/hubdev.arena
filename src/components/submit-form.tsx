@@ -79,7 +79,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             required
             name="title"
             className="brutal-input"
-            placeholder="Prompt Forge"
+            placeholder="Your app name"
           />
         </label>
         <label className="space-y-2 md:col-span-2">
@@ -89,7 +89,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             name="oneLiner"
             rows={3}
             className="brutal-input"
-            placeholder="Stress-test prompts against real user friction before launch."
+            placeholder="What does your app do in one sentence?"
           />
         </label>
         <label className="space-y-2">
@@ -99,7 +99,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             name="liveUrl"
             type="url"
             className="brutal-input"
-            placeholder="https://yourapp.example.com"
+            placeholder="https://your-app.com"
           />
         </label>
         <label className="space-y-2">

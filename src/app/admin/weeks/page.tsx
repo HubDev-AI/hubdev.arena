@@ -61,13 +61,13 @@ export default async function AdminWeeksPage() {
           </h2>
         </div>
         {[
-          ["slug", "Slug", "launch-week"],
-          ["themeTitle", "Theme title", "Agents That Ship"],
+          ["slug", "Slug", "week-1"],
+          ["themeTitle", "Theme title", "Your theme title"],
           ["timezone", "Timezone", "America/Los_Angeles"],
-          ["submissionOpenAt", "Submission open", "2026-03-12T20:00:00.000Z"],
-          ["submissionCloseAt", "Submission close", "2026-03-16T06:59:00.000Z"],
-          ["votingOpenAt", "Voting open", "2026-03-16T16:00:00.000Z"],
-          ["votingCloseAt", "Voting close", "2026-03-19T06:59:00.000Z"],
+          ["submissionOpenAt", "Submission open (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
+          ["submissionCloseAt", "Submission close (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
+          ["votingOpenAt", "Voting open (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
+          ["votingCloseAt", "Voting close (ISO 8601)", "YYYY-MM-DDTHH:MM:SS.000Z"],
         ].map(([name, label, placeholder]) => (
           <label key={name} className="space-y-2">
             <span className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
@@ -90,7 +90,7 @@ export default async function AdminWeeksPage() {
             name="themeDescription"
             rows={4}
             className="w-full rounded-[1.3rem] border border-[var(--line)] bg-[var(--paper)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition focus:border-[var(--cobalt)]"
-            placeholder="Build the most compelling AI-powered app that feels production-ready after a single session."
+            placeholder="Describe the theme for this week's challenge..."
           />
         </label>
         <button

@@ -54,7 +54,7 @@ export default async function Home() {
           </div>
 
           {/* Stats row */}
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
             <div className="border-[2px] border-gray-700 bg-gray-900 p-4">
               <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-gray-500">
                 Week status
@@ -69,14 +69,6 @@ export default async function Home() {
               </p>
               <p className="mt-2 text-xl font-black uppercase tracking-tight">
                 {leaderboard.length}
-              </p>
-            </div>
-            <div className="border-[2px] border-gray-700 bg-gray-900 p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-gray-500">
-                Timezone
-              </p>
-              <p className="mt-2 text-xl font-black uppercase tracking-tight">
-                {week.timezone}
               </p>
             </div>
           </div>

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { Space_Mono, Outfit, Syne } from "next/font/google";
 
 import { SiteHeader } from "@/components/site-header";
+import { getDataMode } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
 import "./globals.css";
 
@@ -46,6 +47,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await getBuilderSession();
+  const dataMode = getDataMode();
 
   return (
     <html lang="en">
@@ -53,7 +55,7 @@ export default async function RootLayout({
         className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased`}
       >
         <div className="relative z-10 min-h-screen">
-          <SiteHeader session={session} />
+          <SiteHeader session={session} dataMode={dataMode} />
           <main>{children}</main>
         </div>
         <Analytics />

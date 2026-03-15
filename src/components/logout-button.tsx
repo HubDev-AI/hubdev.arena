@@ -1,8 +1,15 @@
 "use client";
 
-export function LogoutButton() {
+import { createClient } from "@/lib/supabase/browser";
+
+export function LogoutButton({ dataMode }: { dataMode?: string }) {
   async function handleLogout() {
-    await fetch("/api/dev/logout", { method: "POST" });
+    if (dataMode === "mock") {
+      await fetch("/api/dev/logout", { method: "POST" });
+    } else {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
     window.location.href = "/";
   }
 

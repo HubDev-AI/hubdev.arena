@@ -46,13 +46,12 @@ export default async function AdminWeekDetailPage({
         {/* Dark hero header */}
         <div className="brutal-card neon-box relative overflow-hidden arena-hero-bg p-6 text-white sm:p-8">
           <AuroraBg />
+          <div className="absolute right-0 top-0 z-20 h-20 w-20" style={{ background: statusColor, clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 11px)",
+          }} />
+          <div className="absolute bottom-0 left-0 z-20 h-1 w-full" style={{ background: `linear-gradient(to right, ${statusColor}, transparent)` }} />
           <div className="relative z-10">
-            <div className="absolute right-0 top-0 h-20 w-20" style={{ background: statusColor, clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
-            <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
-              backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 11px)",
-            }} />
-            <div className="absolute bottom-0 left-0 h-1 w-full" style={{ background: `linear-gradient(to right, ${statusColor}, transparent)` }} />
-
             <Link href="/admin/weeks" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-gray-400 transition hover:text-white">
               &larr; All weeks
             </Link>

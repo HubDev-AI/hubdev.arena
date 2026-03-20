@@ -4,11 +4,16 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { StatusBar } from "@/components/status-bar";
 
+type AudioPreset = "ambient" | "battle";
+
 /**
  * Layout: [Play button] [Status bar animation]
  *                        [Volume slider (below bars, only when playing)]
+ *
+ * preset="ambient" (default) — warm drone pad with shimmer harmonics
+ * preset="battle" — darker, more intense synth with faster pulse
  */
-export function MusicVisualizer({ className = "" }: { className?: string }) {
+export function MusicVisualizer({ className = "", preset = "ambient" }: { className?: string; preset?: AudioPreset }) {
   const [freqData, setFreqData] = useState<Uint8Array | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.3);
@@ -36,96 +41,199 @@ export function MusicVisualizer({ className = "" }: { className?: string }) {
     masterGain.connect(analyser);
     analyser.connect(ctx.destination);
 
-    // Warm drone pad
-    [55, 82.41, 110, 146.83].forEach((freq) => {
-      const osc = ctx.createOscillator();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const g = ctx.createGain();
-      g.gain.value = 0.06;
-      const lfo = ctx.createOscillator();
-      lfo.type = "sine";
-      lfo.frequency.value = 0.1 + Math.random() * 0.15;
-      const lg = ctx.createGain();
-      lg.gain.value = 2;
-      lfo.connect(lg);
-      lg.connect(osc.frequency);
-      lfo.start();
-      const f = ctx.createBiquadFilter();
-      f.type = "lowpass";
-      f.frequency.value = 400;
-      osc.connect(f);
-      f.connect(g);
-      g.connect(masterGain);
-      osc.start();
-      nodesRef.current.push(osc);
-    });
+    if (preset === "battle") {
+      // === Battle preset: darker, more intense ===
 
-    // Shimmer harmonics
-    [440, 554.37, 659.25].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      osc.type = "triangle";
-      osc.frequency.value = freq;
-      const g = ctx.createGain();
-      g.gain.value = 0;
-      const lfo = ctx.createOscillator();
-      lfo.type = "sine";
-      lfo.frequency.value = 0.03 + i * 0.01;
-      const lg = ctx.createGain();
-      lg.gain.value = 0.015;
-      lfo.connect(lg);
-      lg.connect(g.gain);
-      lfo.start();
-      const f = ctx.createBiquadFilter();
-      f.type = "bandpass";
-      f.frequency.value = freq;
-      f.Q.value = 5;
-      osc.connect(f);
-      f.connect(g);
-      g.connect(masterGain);
-      osc.start();
-      nodesRef.current.push(osc);
-    });
+      // Deep sawtooth drone (minor key — A2, C3, E3, G3)
+      [110, 130.81, 164.81, 196].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        osc.type = "sawtooth";
+        osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.value = 0.035;
+        const lfo = ctx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.value = 0.15 + Math.random() * 0.2;
+        const lg = ctx.createGain();
+        lg.gain.value = 3;
+        lfo.connect(lg);
+        lg.connect(osc.frequency);
+        lfo.start();
+        const f = ctx.createBiquadFilter();
+        f.type = "lowpass";
+        f.frequency.value = 300;
+        f.Q.value = 3;
+        osc.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        nodesRef.current.push(osc);
+      });
 
-    // Sub bass pulse
-    const pulse = ctx.createOscillator();
-    pulse.type = "sine";
-    pulse.frequency.value = 55;
-    const pg = ctx.createGain();
-    pg.gain.value = 0;
-    const plfo = ctx.createOscillator();
-    plfo.type = "square";
-    plfo.frequency.value = 0.25;
-    const plg = ctx.createGain();
-    plg.gain.value = 0.04;
-    plfo.connect(plg);
-    plg.connect(pg.gain);
-    plfo.start();
-    const pf = ctx.createBiquadFilter();
-    pf.type = "lowpass";
-    pf.frequency.value = 100;
-    pulse.connect(pf);
-    pf.connect(pg);
-    pg.connect(masterGain);
-    pulse.start();
-    nodesRef.current.push(pulse);
+      // Tense high harmonics (minor intervals)
+      [523.25, 622.25, 783.99].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = "square";
+        osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.value = 0;
+        const lfo = ctx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.value = 0.05 + i * 0.015;
+        const lg = ctx.createGain();
+        lg.gain.value = 0.012;
+        lfo.connect(lg);
+        lg.connect(g.gain);
+        lfo.start();
+        const f = ctx.createBiquadFilter();
+        f.type = "bandpass";
+        f.frequency.value = freq;
+        f.Q.value = 8;
+        osc.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        nodesRef.current.push(osc);
+      });
 
-    // Random sparkles
-    intervalRef.current = setInterval(() => {
-      if (ctx.state !== "running") return;
-      const freqs = [880, 1108.73, 1318.51, 1760, 2217.46];
-      const sf = freqs[Math.floor(Math.random() * freqs.length)] ?? 880;
-      const s = ctx.createOscillator();
-      s.type = "sine";
-      s.frequency.value = sf;
-      const sg = ctx.createGain();
-      sg.gain.setValueAtTime(0.02, ctx.currentTime);
-      sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
-      s.connect(sg);
-      sg.connect(masterGain);
-      s.start();
-      s.stop(ctx.currentTime + 2.5);
-    }, 3000 + Math.random() * 4000);
+      // Driving sub-bass pulse (faster than ambient)
+      const pulse = ctx.createOscillator();
+      pulse.type = "sine";
+      pulse.frequency.value = 55;
+      const pg = ctx.createGain();
+      pg.gain.value = 0;
+      const plfo = ctx.createOscillator();
+      plfo.type = "square";
+      plfo.frequency.value = 0.5; // Twice as fast as ambient
+      const plg = ctx.createGain();
+      plg.gain.value = 0.05;
+      plfo.connect(plg);
+      plg.connect(pg.gain);
+      plfo.start();
+      const pf = ctx.createBiquadFilter();
+      pf.type = "lowpass";
+      pf.frequency.value = 80;
+      pulse.connect(pf);
+      pf.connect(pg);
+      pg.connect(masterGain);
+      pulse.start();
+      nodesRef.current.push(pulse);
+
+      // Aggressive sparkles (lower, more frequent)
+      intervalRef.current = setInterval(() => {
+        if (ctx.state !== "running") return;
+        const freqs = [659.25, 783.99, 987.77, 1174.66, 1318.51];
+        const sf = freqs[Math.floor(Math.random() * freqs.length)] ?? 659.25;
+        const s = ctx.createOscillator();
+        s.type = "sawtooth";
+        s.frequency.value = sf;
+        const sg = ctx.createGain();
+        sg.gain.setValueAtTime(0.018, ctx.currentTime);
+        sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+        const sf2 = ctx.createBiquadFilter();
+        sf2.type = "bandpass";
+        sf2.frequency.value = sf;
+        sf2.Q.value = 10;
+        s.connect(sf2);
+        sf2.connect(sg);
+        sg.connect(masterGain);
+        s.start();
+        s.stop(ctx.currentTime + 1.5);
+      }, 2000 + Math.random() * 2500);
+    } else {
+      // === Ambient preset: warm drone ===
+
+      // Warm drone pad
+      [55, 82.41, 110, 146.83].forEach((freq) => {
+        const osc = ctx.createOscillator();
+        osc.type = "sine";
+        osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.value = 0.06;
+        const lfo = ctx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.value = 0.1 + Math.random() * 0.15;
+        const lg = ctx.createGain();
+        lg.gain.value = 2;
+        lfo.connect(lg);
+        lg.connect(osc.frequency);
+        lfo.start();
+        const f = ctx.createBiquadFilter();
+        f.type = "lowpass";
+        f.frequency.value = 400;
+        osc.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        nodesRef.current.push(osc);
+      });
+
+      // Shimmer harmonics
+      [440, 554.37, 659.25].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        osc.type = "triangle";
+        osc.frequency.value = freq;
+        const g = ctx.createGain();
+        g.gain.value = 0;
+        const lfo = ctx.createOscillator();
+        lfo.type = "sine";
+        lfo.frequency.value = 0.03 + i * 0.01;
+        const lg = ctx.createGain();
+        lg.gain.value = 0.015;
+        lfo.connect(lg);
+        lg.connect(g.gain);
+        lfo.start();
+        const f = ctx.createBiquadFilter();
+        f.type = "bandpass";
+        f.frequency.value = freq;
+        f.Q.value = 5;
+        osc.connect(f);
+        f.connect(g);
+        g.connect(masterGain);
+        osc.start();
+        nodesRef.current.push(osc);
+      });
+
+      // Sub bass pulse
+      const pulse = ctx.createOscillator();
+      pulse.type = "sine";
+      pulse.frequency.value = 55;
+      const pg = ctx.createGain();
+      pg.gain.value = 0;
+      const plfo = ctx.createOscillator();
+      plfo.type = "square";
+      plfo.frequency.value = 0.25;
+      const plg = ctx.createGain();
+      plg.gain.value = 0.04;
+      plfo.connect(plg);
+      plg.connect(pg.gain);
+      plfo.start();
+      const pf = ctx.createBiquadFilter();
+      pf.type = "lowpass";
+      pf.frequency.value = 100;
+      pulse.connect(pf);
+      pf.connect(pg);
+      pg.connect(masterGain);
+      pulse.start();
+      nodesRef.current.push(pulse);
+
+      // Random sparkles
+      intervalRef.current = setInterval(() => {
+        if (ctx.state !== "running") return;
+        const freqs = [880, 1108.73, 1318.51, 1760, 2217.46];
+        const sf = freqs[Math.floor(Math.random() * freqs.length)] ?? 880;
+        const s = ctx.createOscillator();
+        s.type = "sine";
+        s.frequency.value = sf;
+        const sg = ctx.createGain();
+        sg.gain.setValueAtTime(0.02, ctx.currentTime);
+        sg.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2);
+        s.connect(sg);
+        sg.connect(masterGain);
+        s.start();
+        s.stop(ctx.currentTime + 2.5);
+      }, 3000 + Math.random() * 4000);
+    }
 
     // Feed analyser data
     const buf = new Uint8Array(analyser.frequencyBinCount);
@@ -136,7 +244,7 @@ export function MusicVisualizer({ className = "" }: { className?: string }) {
     };
     tick();
     setIsPlaying(true);
-  }, [volume]);
+  }, [volume, preset]);
 
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(animRef.current);

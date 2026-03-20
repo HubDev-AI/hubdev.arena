@@ -14,9 +14,14 @@ const dateFields = [
 
 export function CreateWeekForm() {
   const [tz, setTz] = useState("America/Los_Angeles");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  function handleSubmit(formData: FormData) {
+  async function handleSubmit(formData: FormData) {
+    setError(null);
+    setIsSubmitting(true);
+
     // Convert datetime-local values to ISO 8601 using selected timezone offset
     const selected = timezones.find((t) => t.tzCode === tz);
     const offsetMatch = selected?.utc?.match(/([+-]\d{2}):(\d{2})/);
@@ -33,7 +38,15 @@ export function CreateWeekForm() {
       }
     }
 
-    return createWeekAction(formData);
+    try {
+      await createWeekAction(formData);
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error ? caughtError.message : "Failed to create week.";
+      setError(message);
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -117,10 +130,17 @@ export function CreateWeekForm() {
 
       <button
         type="submit"
-        className="brutal-btn brutal-btn-primary"
+        disabled={isSubmitting}
+        className="brutal-btn brutal-btn-primary disabled:opacity-50"
       >
-        Create draft week
+        {isSubmitting ? "Creating..." : "Create draft week"}
       </button>
+
+      {error ? (
+        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-50 px-4 py-3">
+          <p className="font-mono text-sm font-bold text-red-700">{error}</p>
+        </div>
+      ) : null}
     </form>
   );
 }

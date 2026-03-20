@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { assertCsrf } from "@/lib/security/csrf";
 import { getBuilderSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
 
@@ -15,6 +16,12 @@ const submissionSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  try {
+    assertCsrf(request);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const session = await getBuilderSession();
     if (!session) {
@@ -37,8 +44,14 @@ export async function POST(request: Request) {
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: "Invalid submission data." }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid data.", fields: error.flatten().fieldErrors },
+        { status: 400 },
+      );
     }
-    return NextResponse.json({ error: "Failed to submit entry." }, { status: 400 });
+    if (error instanceof Error && /rate.?limit|limited/i.test(error.message)) {
+      return NextResponse.json({ error: error.message }, { status: 429 });
+    }
+    return NextResponse.json({ error: "Internal server error." }, { status: 500 });
   }
 }

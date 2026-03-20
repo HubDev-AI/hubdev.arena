@@ -22,11 +22,21 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         throw new Error("Choose a GIF or MP4 demo asset first.");
       }
 
+      if (file.size > 50 * 1024 * 1024) {
+        throw new Error("File must be under 50 MB.");
+      }
+
+      const liveUrlValue = formData.get("liveUrl");
+      if (typeof liveUrlValue === "string" && !liveUrlValue.startsWith("https://")) {
+        throw new Error("Live URL must start with https://");
+      }
+
       setIsUploading(true);
       const uploadForm = new FormData();
       uploadForm.append("file", file);
       const uploadResponse = await fetch("/api/assets", {
         method: "POST",
+        headers: { "X-Requested-With": "XMLHttpRequest" },
         body: uploadForm,
       });
       const uploadPayload = (await uploadResponse.json()) as {
@@ -44,6 +54,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         method: "POST",
         headers: {
           "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
         },
         body: JSON.stringify({
           weekSlug,
@@ -86,7 +97,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
             <span className="brutal-label">Title</span>
-            <span className={`font-mono text-[10px] ${titleLen > 50 ? "text-red-700" : "text-[var(--muted)]"}`}>
+            <span className={`font-mono text-[10px] ${titleLen >= 48 ? "text-red-700" : "text-[var(--muted)]"}`}>
               {titleLen}/60
             </span>
           </div>
@@ -102,7 +113,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
             <span className="brutal-label">One-liner</span>
-            <span className={`font-mono text-[10px] ${oneLinerLen > 120 ? "text-red-700" : "text-[var(--muted)]"}`}>
+            <span className={`font-mono text-[10px] ${oneLinerLen >= 112 ? "text-red-700" : "text-[var(--muted)]"}`}>
               {oneLinerLen}/140
             </span>
           </div>
@@ -122,6 +133,8 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             required
             name="liveUrl"
             type="url"
+            pattern="https://.*"
+            title="URL must start with https://"
             className="brutal-input"
             placeholder="https://your-app.com"
           />

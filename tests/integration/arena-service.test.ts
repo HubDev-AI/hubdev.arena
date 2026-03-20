@@ -126,7 +126,7 @@ describe("ArenaService", () => {
       voterSessions: [],
       votes: [],
     });
-    const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+    const service = createArenaService(repository, { now: () => NOW, random: () => 0, adminAllowlist: ["admin@example.com"] });
 
     const created = await service.submitEntry({
       weekSlug: "agents-in-the-arena",
@@ -181,7 +181,7 @@ describe("ArenaService", () => {
       voterSessions: [],
       votes: [],
     });
-    const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+    const service = createArenaService(repository, { now: () => NOW, random: () => 0, adminAllowlist: ["admin@example.com"] });
 
     await service.reviewEntry({
       adminEmail: "admin@example.com",
@@ -353,10 +353,11 @@ describe("ArenaService", () => {
       votes: [],
     });
     const service = createArenaService(repository, { now: () => NOW, random: () => 0 });
+    const allMatchups = makeMatchups(approvedEntries);
 
     await service.castVote({
       weekSlug: "agents-in-the-arena",
-      matchupId: "matchup-entry-1-entry-2",
+      matchupId: allMatchups[0]!.id,
       winnerEntryId: "entry-1",
       loserEntryId: "entry-2",
       cookieId: "cookie-1",
@@ -366,7 +367,7 @@ describe("ArenaService", () => {
 
     await service.castVote({
       weekSlug: "agents-in-the-arena",
-      matchupId: "matchup-entry-1-entry-3",
+      matchupId: allMatchups[1]!.id,
       winnerEntryId: "entry-3",
       loserEntryId: "entry-1",
       cookieId: "cookie-2",

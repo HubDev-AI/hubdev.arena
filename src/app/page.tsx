@@ -1,19 +1,77 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { Countdown } from "@/components/countdown";
 import { EntryMedia } from "@/components/entry-media";
 import { InfoTooltip } from "@/components/info-tooltip";
+import { JsonLd } from "@/components/json-ld";
 import { LeaderboardTable } from "@/components/leaderboard-table";
+import { safeHref } from "@/lib/safe-href";
 import { getBuilderSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const dynamic = "force-dynamic";
 
+export const metadata: Metadata = {
+  title: "HubDev Arena — Weekly Battles for AI-Built Apps",
+  description:
+    "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard. New themes every week.",
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app",
+  },
+  openGraph: {
+    title: "HubDev Arena — Weekly Battles for AI-Built Apps",
+    description:
+      "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard.",
+    url: "https://hubdev-arena.vercel.app",
+  },
+};
+
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What counts as an AI-built app?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Any application where AI tools were used significantly in the development process -- code generation, design, debugging, or any creative workflow.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How are matchups selected?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Matchups are randomized. You will see two entries side by side and pick the one you think is better. Each voting session includes 10 matchups.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Can I vote for my own entry?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "No. The system automatically excludes your own submissions from your voting matchups to keep things fair.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "When does the week reset?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Each challenge week runs on its own schedule. Check the countdown timer on the homepage for the current deadline.",
+      },
+    },
+  ],
+};
+
 export default async function Home() {
   let week;
   let session;
+  let service;
   try {
-    const service = getArenaService();
+    service = getArenaService();
     session = await getBuilderSession();
     week = await service.getCurrentWeek();
   } catch {
@@ -40,13 +98,13 @@ export default async function Home() {
     );
   }
 
-  const service = getArenaService();
   const leaderboard = await service.getLeaderboard({ weekSlug: week.slug });
   const featuredEntries = leaderboard.slice(0, 3);
   const pastWinners = await service.listPastWinners(2);
 
   return (
     <div className="page-bg page-bg-home">
+    <JsonLd data={faqJsonLd} />
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
       {/* Hero section */}
       <section aria-label="Hero banner" className="space-y-6">
@@ -240,7 +298,7 @@ export default async function Home() {
                 </div>
                 <div className="flex gap-2">
                   <a
-                    href={entry.liveUrl}
+                    href={safeHref(entry.liveUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="brutal-btn brutal-btn-green text-[10px] px-3 py-1.5"

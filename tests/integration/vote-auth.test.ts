@@ -95,6 +95,7 @@ describe("authenticated voting boundaries", () => {
         method: "POST",
         headers: {
           "content-type": "application/json",
+          "x-requested-with": "XMLHttpRequest",
         },
         body: JSON.stringify({
           weekSlug: "agents-in-the-arena",

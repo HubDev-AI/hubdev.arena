@@ -9,11 +9,12 @@ const envSchema = z.object({
   NEXT_PUBLIC_SITE_URL: z.string().url().optional(),
   SEC4_INTERNAL_BASE_URL: z.string().url().optional(),
   SEC4_INTERNAL_TOKEN: z.string().optional(),
-  CRON_SECRET: z.string().optional(),
+  // When present, CRON_SECRET must be at least 16 characters to resist brute-force
+  CRON_SECRET: z.string().min(16).optional(),
   ADMIN_ALLOWLIST: z.string().default(""),
   HUBDEV_DATA_MODE: z.enum(["mock", "supabase"]).optional(),
-  HUBDEV_COOKIE_SECRET: z.string().min(1),
-  HUBDEV_FINGERPRINT_SECRET: z.string().min(1),
+  HUBDEV_COOKIE_SECRET: z.string().min(32),
+  HUBDEV_FINGERPRINT_SECRET: z.string().min(32),
 });
 
 let cachedEnv: z.infer<typeof envSchema> | null = null;

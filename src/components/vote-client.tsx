@@ -5,13 +5,49 @@ import { useEffect, useState } from "react";
 import { EntryMedia } from "@/components/entry-media";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { LiveLeaderboard } from "@/components/live-leaderboard";
+import { safeHref } from "@/lib/safe-href";
 import type { LeaderboardRow, VoteDeck } from "@/lib/server/types";
+
+async function fetchMatchup(
+  weekSlug: string,
+  signal?: AbortSignal,
+): Promise<
+  | { kind: "finished" }
+  | { kind: "error"; message: string }
+  | { kind: "ok"; deck: VoteDeck }
+> {
+  try {
+    const response = await fetch(
+      `/api/vote/next?week=${encodeURIComponent(weekSlug)}`,
+      {
+        signal,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      },
+    );
+
+    if (response.status === 404) {
+      return { kind: "finished" };
+    }
+
+    const payload = (await response.json()) as VoteDeck & { error?: string };
+
+    if (!response.ok) {
+      return { kind: "error", message: payload.error ?? "Failed to load a matchup." };
+    }
+
+    return { kind: "ok", deck: payload };
+  } catch {
+    return { kind: "error", message: "Network error. Please check your connection and try again." };
+  }
+}
 
 export function VoteClient({
   weekSlug,
+  weekId,
   initialLeaderboard,
 }: {
   weekSlug: string;
+  weekId?: string;
   initialLeaderboard: LeaderboardRow[];
 }) {
   const [matchup, setMatchup] = useState<VoteDeck | null>(null);
@@ -26,65 +62,57 @@ export function VoteClient({
     setIsLoading(true);
     setError(null);
 
-    const response = await fetch(`/api/vote/next?week=${encodeURIComponent(weekSlug)}`);
-    if (response.status === 404) {
+    const result = await fetchMatchup(weekSlug);
+
+    if (result.kind === "finished") {
       setMatchup(null);
       setIsFinished(true);
       setIsLoading(false);
       return;
     }
 
-    const payload = (await response.json()) as VoteDeck & { error?: string };
-
-    if (!response.ok) {
-      setError(payload.error ?? "Failed to load a matchup.");
+    if (result.kind === "error") {
+      setError(result.message);
       setIsLoading(false);
       return;
     }
 
-    setMatchup(payload);
+    setMatchup(result.deck);
     setIsLoading(false);
   }
 
   useEffect(() => {
-    let isCancelled = false;
+    const controller = new AbortController();
 
     async function hydrateMatchup() {
       setIsLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/vote/next?week=${encodeURIComponent(weekSlug)}`);
-      if (response.status === 404) {
-        if (isCancelled) {
-          return;
-        }
+      const result = await fetchMatchup(weekSlug, controller.signal);
 
+      if (controller.signal.aborted) return;
+
+      if (result.kind === "finished") {
         setMatchup(null);
         setIsFinished(true);
         setIsLoading(false);
         return;
       }
 
-      const payload = (await response.json()) as VoteDeck & { error?: string };
-
-      if (isCancelled) {
-        return;
-      }
-
-      if (!response.ok) {
-        setError(payload.error ?? "Failed to load a matchup.");
+      if (result.kind === "error") {
+        setError(result.message);
         setIsLoading(false);
         return;
       }
 
-      setMatchup(payload);
+      setMatchup(result.deck);
       setIsLoading(false);
     }
 
     void hydrateMatchup();
 
     return () => {
-      isCancelled = true;
+      controller.abort();
     };
   }, [weekSlug]);
 
@@ -96,23 +124,30 @@ export function VoteClient({
     setIsSubmitting(true);
     setError(null);
 
-    const response = await fetch("/api/vote", {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        weekSlug,
-        matchupId: matchup.matchupId,
-        winnerEntryId,
-        loserEntryId,
-        idempotencyKey: crypto.randomUUID(),
-      }),
-    });
-    const payload = (await response.json()) as { error?: string };
+    try {
+      const response = await fetch("/api/vote", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        body: JSON.stringify({
+          weekSlug,
+          matchupId: matchup.matchupId,
+          winnerEntryId,
+          loserEntryId,
+          idempotencyKey: crypto.randomUUID(),
+        }),
+      });
+      const payload = (await response.json()) as { error?: string };
 
-    if (!response.ok) {
-      setError(payload.error ?? "Vote failed.");
+      if (!response.ok) {
+        setError(payload.error ?? "Vote failed.");
+        setIsSubmitting(false);
+        return;
+      }
+    } catch {
+      setError("Network error. Please check your connection and try again.");
       setIsSubmitting(false);
       return;
     }
@@ -162,7 +197,7 @@ export function VoteClient({
             </button>
           </div>
         </div>
-        <LiveLeaderboard weekSlug={weekSlug} initialRows={initialLeaderboard} />
+        <LiveLeaderboard weekSlug={weekSlug} weekId={weekId} initialRows={initialLeaderboard} />
       </div>
     );
   }
@@ -175,6 +210,16 @@ export function VoteClient({
           <div className="brutal-badge brutal-badge-green px-4 py-2 text-xs shadow-[var(--shadow-sm)]">
             Vote recorded
           </div>
+        </div>
+      ) : null}
+
+      {/* Error alert — placed above matchup cards for visibility */}
+      {error ? (
+        <div className="brutal-card overflow-hidden border-[var(--accent-red)] p-0" role="alert">
+          <div className="h-1 w-full bg-[var(--accent-red)]" />
+          <p className="px-5 py-4 font-mono text-sm font-bold text-[var(--accent-red)]">
+            {error}
+          </p>
         </div>
       ) : null}
 
@@ -255,7 +300,7 @@ export function VoteClient({
                       Pick this app
                     </button>
                     <a
-                      href={entry.liveUrl}
+                      href={safeHref(entry.liveUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="brutal-btn brutal-btn-outline"
@@ -277,15 +322,6 @@ export function VoteClient({
           </a>
         </div>
       )}
-
-      {error ? (
-        <div className="brutal-card overflow-hidden border-[var(--accent-red)] p-0" role="alert">
-          <div className="h-1 w-full bg-[var(--accent-red)]" />
-          <p className="px-5 py-4 font-mono text-sm font-bold text-[var(--accent-red)]">
-            {error}
-          </p>
-        </div>
-      ) : null}
     </div>
   );
 }

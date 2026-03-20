@@ -71,6 +71,10 @@ type GetVoteDeckInput = {
   fingerprintHash: string;
 };
 
+function stripHtml(input: string): string {
+  return input.replace(/<[^>]*>/g, "").trim();
+}
+
 function slugify(value: string) {
   return value
     .trim()
@@ -165,7 +169,7 @@ export function createArenaService(
   {
     now = () => new Date(),
     random = Math.random,
-    adminAllowlist = ["admin@example.com"],
+    adminAllowlist = [],
   }: ArenaServiceOptions = {},
 ) {
   async function assertAdmin(adminEmail: string) {
@@ -216,6 +220,8 @@ export function createArenaService(
     async submitEntry(input: SubmitEntryInput) {
       const currentTime = now().toISOString();
       const week = await loadWeek(input.weekSlug);
+      const sanitizedTitle = stripHtml(input.title);
+      const sanitizedOneLiner = stripHtml(input.oneLiner);
 
       if (week.status !== "submissions_open") {
         throw new Error("Submissions are not open for this week.");
@@ -232,12 +238,12 @@ export function createArenaService(
       const pendingEntry = builderEntries.find((entry) => entry.status === "pending");
 
       if (pendingEntry) {
-        pendingEntry.title = input.title;
-        pendingEntry.oneLiner = input.oneLiner;
+        pendingEntry.title = sanitizedTitle;
+        pendingEntry.oneLiner = sanitizedOneLiner;
         pendingEntry.liveUrl = input.liveUrl;
         pendingEntry.demoAssetPath = input.demoAssetPath;
         pendingEntry.submittedAt = currentTime;
-        return saveEntryWithUniqueSlug(pendingEntry, week.id, input.title);
+        return saveEntryWithUniqueSlug(pendingEntry, week.id, sanitizedTitle);
       }
 
       const entry: Entry = {
@@ -245,8 +251,8 @@ export function createArenaService(
         weekId: week.id,
         builderId: input.builderId,
         slug: "",
-        title: input.title,
-        oneLiner: input.oneLiner,
+        title: sanitizedTitle,
+        oneLiner: sanitizedOneLiner,
         liveUrl: input.liveUrl,
         demoAssetPath: input.demoAssetPath,
         status: "pending",
@@ -259,7 +265,7 @@ export function createArenaService(
         approvedAt: null,
       };
 
-      return saveEntryWithUniqueSlug(entry, week.id, input.title);
+      return saveEntryWithUniqueSlug(entry, week.id, sanitizedTitle);
     },
 
     async listWeeks() {
@@ -373,9 +379,14 @@ export function createArenaService(
       const approvedEntries = (await repository.listEntriesByWeek(week.id)).filter(
         (entry) => entry.status === "approved",
       );
+
+      if (approvedEntries.length < 2) {
+        throw new Error("At least 2 approved entries are required to open voting.");
+      }
+
       const matchups = generateUniqueMatchups(approvedEntries.map((entry) => entry.id)).map(
         ([entryAId, entryBId]) => ({
-          id: `matchup-${entryAId}-${entryBId}`,
+          id: randomUUID(),
           weekId: week.id,
           entryAId,
           entryBId,
@@ -385,16 +396,20 @@ export function createArenaService(
         }),
       );
 
+      // Write matchups first: they are inert until the week status transitions.
+      // If matchup writing fails, the week status remains unchanged.
+      await repository.replaceMatchups(week.id, matchups);
       week.status = transitionWeekStatus(week.status, "open_voting");
       await repository.saveWeek(week);
-      await repository.replaceMatchups(week.id, matchups);
 
       return {
         matchupsCreated: matchups.length,
       };
     },
 
-    async getWeekAdminDetail(weekSlug: string) {
+    async getWeekAdminDetail(adminEmail: string, weekSlug: string) {
+      await assertAdmin(adminEmail);
+
       const week = await loadWeek(weekSlug);
       const entries = await repository.listEntriesByWeek(week.id);
       const matchups = await repository.listMatchupsByWeek(week.id);
@@ -436,7 +451,7 @@ export function createArenaService(
 
       const sessionVotes = await repository.listVotesBySession(voterSession.id);
       const matchups = await repository.listMatchupsByWeek(week.id);
-      const selectedMatchup = selectNextMatchup({
+      const matchupResult = selectNextMatchup({
         matchups: matchups.map((matchup) => ({
           id: matchup.id,
           entryAId: matchup.entryAId,
@@ -454,11 +469,11 @@ export function createArenaService(
         random,
       });
 
-      if (!selectedMatchup) {
+      if (matchupResult.status !== "found") {
         return null;
       }
 
-      const matchup = await repository.getMatchupById(selectedMatchup.id);
+      const matchup = await repository.getMatchupById(matchupResult.matchup.id);
       ensure(matchup, "Selected matchup was not found.");
       matchup.exposureCount += 1;
       await repository.saveMatchup(matchup);
@@ -482,7 +497,23 @@ export function createArenaService(
 
       voterSession.lastSeenAt = currentTime;
       voterSession.fingerprintHash = fingerprintHash;
-      await repository.saveVoterSession(voterSession);
+      try {
+        await repository.saveVoterSession(voterSession);
+      } catch {
+        // A concurrent request may have created the session already.
+        // Re-query by cookieId and use the existing record.
+        // NOTE: The Supabase implementation should have a unique constraint
+        // on (week_id, cookie_id) so that duplicate inserts fail.
+        const existing = await repository.getVoterSessionByCookie(week.id, cookieId);
+        if (existing) {
+          voterSession = existing;
+          voterSession.lastSeenAt = currentTime;
+          voterSession.fingerprintHash = fingerprintHash;
+          await repository.saveVoterSession(voterSession);
+        } else {
+          throw new Error("Failed to create voter session.");
+        }
+      }
 
       return {
         matchupId: matchup.id,
@@ -597,7 +628,25 @@ export function createArenaService(
       await repository.saveEntry(winner);
       await repository.saveEntry(loser);
       await repository.saveMatchup(matchup);
-      await repository.saveVoterSession(voterSession);
+      try {
+        await repository.saveVoterSession(voterSession);
+      } catch {
+        // A concurrent request may have created the session already.
+        // Re-query by cookieId and use the existing record.
+        // NOTE: The Supabase implementation should have a unique constraint
+        // on (week_id, cookie_id) so that duplicate inserts fail.
+        const existing = await repository.getVoterSessionByCookie(week.id, input.cookieId);
+        if (existing) {
+          voterSession = existing;
+          voterSession.votesCast += 1;
+          voterSession.fingerprintHash = input.fingerprintHash;
+          voterSession.lastSeenAt = currentTime.toISOString();
+          await repository.saveVoterSession(voterSession);
+        } else {
+          throw new Error("Failed to create voter session.");
+        }
+      }
+      vote.voterSessionId = voterSession.id;
       await repository.saveVote(vote);
 
       return {

@@ -8,10 +8,12 @@ import type { LeaderboardRow } from "@/lib/server/types";
 
 export function LiveLeaderboard({
   weekSlug,
+  weekId,
   initialRows,
   compact = false,
 }: {
   weekSlug: string;
+  weekId?: string;
   initialRows: LeaderboardRow[];
   compact?: boolean;
 }) {
@@ -19,7 +21,9 @@ export function LiveLeaderboard({
 
   useEffect(() => {
     async function fetchLeaderboard() {
-      const response = await fetch(`/api/leaderboard?week=${encodeURIComponent(weekSlug)}`);
+      const response = await fetch(`/api/leaderboard?week=${encodeURIComponent(weekSlug)}`, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      });
       if (response.ok) {
         const nextRows = (await response.json()) as LeaderboardRow[];
         setRows(nextRows);
@@ -27,15 +31,15 @@ export function LiveLeaderboard({
     }
 
     const supabase = createClient();
+    const subscriptionFilter = weekId
+      ? { event: "UPDATE" as const, schema: "public", table: "entries", filter: `week_id=eq.${weekId}` }
+      : { event: "UPDATE" as const, schema: "public", table: "entries" };
+
     const channel = supabase
       .channel(`leaderboard-${weekSlug}`)
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "entries" },
-        () => {
-          void fetchLeaderboard();
-        },
-      )
+      .on("postgres_changes", subscriptionFilter, () => {
+        void fetchLeaderboard();
+      })
       .subscribe();
 
     // Fall back to polling if Realtime drops
@@ -49,7 +53,7 @@ export function LiveLeaderboard({
       window.clearInterval(fallbackTimer);
       void supabase.removeChannel(channel);
     };
-  }, [weekSlug]);
+  }, [weekSlug, weekId]);
 
   return <LeaderboardTable rows={rows} compact={compact} />;
 }

@@ -19,11 +19,14 @@ interface LeaderboardEntry {
 
 const MOCK_EVENTS: Array<{ type: ActivityEvent["type"]; text: string }> = [
   { type: "vote", text: "New vote cast in matchup" },
-  { type: "elo_change", text: "ELO ratings updated" },
-  { type: "vote", text: "Voting streak completed" },
-  { type: "submit", text: "New entry submitted" },
   { type: "vote", text: "Head-to-head vote recorded" },
+  { type: "vote", text: "Voting streak completed" },
+  { type: "vote", text: "Matchup decided" },
+  { type: "elo_change", text: "ELO ratings updated" },
   { type: "elo_change", text: "Leaderboard position changed" },
+  { type: "elo_change", text: "Rankings reshuffled" },
+  { type: "submit", text: "New entry submitted for review" },
+  { type: "submit", text: "Builder joined the arena" },
 ];
 
 interface LivePulseProps {
@@ -61,18 +64,28 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
     if (!weekSlug) return;
 
     let cancelled = false;
+    let isFirstFetch = true;
 
     const fetchAndCompare = async () => {
       try {
-        const res = await fetch(`/api/leaderboard?week=${encodeURIComponent(weekSlug)}`);
+        const res = await fetch(`/api/leaderboard?week=${encodeURIComponent(weekSlug)}`, {
+          headers: { "X-Requested-With": "XMLHttpRequest" },
+        });
         if (!res.ok) return;
-        const data: LeaderboardEntry[] = await res.json();
+        const data = (await res.json()) as LeaderboardEntry[];
         if (cancelled) return;
 
         const prev = prevDataRef.current;
+
+        if (isFirstFetch && data.length > 0) {
+          // Seed an initial event so the feed isn't empty
+          isFirstFetch = false;
+          const totalVotes = data.reduce((sum, e) => sum + (e.wins as number) + (e.losses as number), 0) / 2;
+          addEvent("elo_change", `${data.length} entries competing \u00b7 ${Math.round(totalVotes)} votes`);
+        }
+
         if (prev) {
           const prevMap = new Map(prev.map((e) => [e.entrySlug, e]));
-          const currentSlugs = new Set(data.map((e) => e.entrySlug));
 
           let eloChanged = false;
           let voteChanged = false;
@@ -92,13 +105,6 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
             }
           }
 
-          // Also check if any entries were removed (unlikely but possible)
-          for (const old of prev) {
-            if (!currentSlugs.has(old.entrySlug)) {
-              // Entry removed — treat as a change but don't generate a specific event
-            }
-          }
-
           if (newEntries > 0) {
             addEvent("submit", newEntries === 1 ? "New entry submitted" : `${newEntries} new entries submitted`);
           }
@@ -112,28 +118,32 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
 
         prevDataRef.current = data;
       } catch {
-        // Silently ignore fetch errors — will retry on next interval
+        // Silently ignore — will retry on next interval
       }
     };
 
     // Initial fetch
-    fetchAndCompare();
+    void fetchAndCompare();
 
-    const interval = setInterval(fetchAndCompare, 10_000);
+    const interval = setInterval(() => void fetchAndCompare(), 10_000);
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
   }, [weekSlug, addEvent]);
 
-  // Simulated events as fallback when no weekSlug or no real changes
+  // Ambient mock events — runs alongside real polling to keep the feed alive
+  // between polls, and as primary source when no weekSlug is provided
   useEffect(() => {
-    if (weekSlug) return;
-
-    // Initial event
+    // Seed an initial event immediately
     addMockEvent();
 
-    const interval = setInterval(addMockEvent, 4000 + Math.random() * 3000);
+    // Slower interval when weekSlug is provided (background ambience)
+    // Faster when no weekSlug (primary source)
+    const delay = weekSlug ? 8000 : 4000;
+    const jitter = weekSlug ? 4000 : 3000;
+
+    const interval = setInterval(addMockEvent, delay + Math.random() * jitter);
     return () => clearInterval(interval);
   }, [weekSlug, addMockEvent]);
 
@@ -154,21 +164,25 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
         </span>
       </div>
       <div className="divide-y divide-[var(--line)]">
-        {events.map((event) => (
-          <div
-            key={event.id}
-            className="flex items-center gap-3 px-5 py-3 animate-slide-up"
-          >
-            <div className={`h-2 w-2 shrink-0 rounded-full ${typeColors[event.type]}`}>
-              <div className={`h-2 w-2 rounded-full ${typeColors[event.type]} animate-ping`} />
+        {events.map((event) => {
+          const secsAgo = Math.max(0, Math.floor((Date.now() - event.timestamp) / 1000));
+          const timeLabel = secsAgo < 5 ? "now" : secsAgo < 60 ? `${secsAgo}s` : `${Math.floor(secsAgo / 60)}m`;
+          return (
+            <div
+              key={event.id}
+              className="flex items-center gap-3 px-5 py-3 animate-slide-up"
+            >
+              <div className={`h-2 w-2 shrink-0 rounded-full ${typeColors[event.type]}`}>
+                <div className={`h-2 w-2 rounded-full ${typeColors[event.type]} animate-ping`} />
+              </div>
+              <p className="text-xs text-[var(--text-secondary)] truncate">{event.text}</p>
+              <span className="ml-auto shrink-0 font-mono text-[9px] text-gray-500">{timeLabel}</span>
             </div>
-            <p className="text-xs text-[var(--text-secondary)] truncate">{event.text}</p>
-            <span className="ml-auto shrink-0 font-mono text-[9px] text-gray-400">now</span>
-          </div>
-        ))}
+          );
+        })}
         {events.length === 0 && (
           <div className="px-5 py-4 text-center">
-            <p className="text-xs text-gray-400">Waiting for activity...</p>
+            <p className="text-xs text-gray-500">Connecting to arena...</p>
           </div>
         )}
       </div>

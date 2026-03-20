@@ -42,8 +42,8 @@ export default async function VotePage() {
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-12 sm:px-6 lg:px-8">
         <div className="brutal-card neon-box scanlines relative overflow-hidden bg-[var(--ink)] p-8 text-white">
           <AuroraBg />
-          <div className="absolute right-0 top-0 z-20 h-20 w-20 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
-          <div className="absolute bottom-0 left-0 z-10 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" />
+          <div className="absolute right-0 top-0 z-30 h-20 w-20 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
+          <div className="absolute bottom-0 left-0 z-20 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" />
           <div className="relative z-10">
           <p className="neon-text font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">
             Authenticated voting

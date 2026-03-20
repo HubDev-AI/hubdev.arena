@@ -9,7 +9,13 @@ import { getBuilderSession } from "@/lib/server/auth";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
 
 export const metadata: Metadata = {
-  title: "Sign in — HubDev Arena",
+  title: "Sign In",
+  description:
+    "Sign in to HubDev Arena to submit your AI-built apps and vote in head-to-head matchups.",
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export const dynamic = "force-dynamic";

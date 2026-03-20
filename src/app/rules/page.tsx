@@ -1,8 +1,24 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Rules — HubDev Arena",
-  description: "How HubDev Arena works: submissions, voting, ELO scoring, and weekly rounds.",
+  title: "Rules and How It Works",
+  description:
+    "How HubDev Arena works: weekly themes, AI-built app submissions, authenticated head-to-head voting, ELO scoring with K=24, and curated rounds.",
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app/rules",
+  },
+  openGraph: {
+    title: "Rules — HubDev Arena",
+    description:
+      "How HubDev Arena works: submissions, voting, ELO scoring, and weekly rounds.",
+    url: "https://hubdev-arena.vercel.app/rules",
+  },
+  twitter: {
+    card: "summary",
+    title: "Rules — HubDev Arena",
+    description:
+      "How HubDev Arena works: submissions, voting, ELO scoring, and weekly rounds.",
+  },
 };
 
 export default function RulesPage() {

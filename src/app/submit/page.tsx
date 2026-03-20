@@ -5,8 +5,24 @@ import { requireBuilderSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const metadata: Metadata = {
-  title: "Submit — HubDev Arena",
-  description: "Submit your AI-built app entry to this week's HubDev Arena challenge.",
+  title: "Submit Your AI-Built App",
+  description:
+    "Submit your AI-built app entry to this week's HubDev Arena challenge. Provide a live URL and demo asset to compete for the top ELO ranking.",
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app/submit",
+  },
+  openGraph: {
+    title: "Submit Your AI-Built App — HubDev Arena",
+    description:
+      "Enter your AI-built app in this week's competition. Provide a live URL and demo asset to compete.",
+    url: "https://hubdev-arena.vercel.app/submit",
+  },
+  twitter: {
+    card: "summary",
+    title: "Submit Your AI-Built App — HubDev Arena",
+    description:
+      "Enter your AI-built app in this week's HubDev Arena competition.",
+  },
 };
 
 export const dynamic = "force-dynamic";

@@ -1,7 +1,13 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 
 import { requireAdminSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
+
+export const metadata: Metadata = {
+  title: "Admin: Weeks",
+  robots: { index: false, follow: false },
+};
 
 import { CreateWeekForm } from "./create-week-form";
 

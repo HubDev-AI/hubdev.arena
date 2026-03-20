@@ -8,8 +8,24 @@ import { getArenaService } from "@/lib/server/runtime";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Leaderboard — HubDev Arena",
-  description: "Live ELO rankings for this week's AI-built app challenge.",
+  title: "Live ELO Leaderboard",
+  description:
+    "Live ELO rankings for this week's AI-built app challenge on HubDev Arena. See which AI-built apps are winning head-to-head matchups.",
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app/leaderboard",
+  },
+  openGraph: {
+    title: "Live ELO Leaderboard — HubDev Arena",
+    description:
+      "Live ELO rankings for this week's AI-built app challenge. See which entries are winning.",
+    url: "https://hubdev-arena.vercel.app/leaderboard",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Live ELO Leaderboard — HubDev Arena",
+    description:
+      "Live ELO rankings for this week's AI-built app competition.",
+  },
 };
 
 export default async function LeaderboardPage() {

@@ -2,22 +2,22 @@ project_id = "hubdev-arena"
 
 [api]
 enabled = true
-port = 54321
+port = 54331
 schemas = ["public", "graphql_public"]
 extra_search_path = ["public", "extensions"]
 max_rows = 1000
 
 [db]
-port = 54322
+port = 54332
 major_version = 15
 
 [studio]
 enabled = true
-port = 54323
+port = 54333
 
 [inbucket]
 enabled = true
-port = 54324
+port = 54334
 
 [auth]
 enabled = true

@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @next/next/no-img-element -- demo assets are user-uploaded, not static; next/image requires known domains */
 type EntryMediaProps = {
   assetPath: string;
   title: string;
@@ -33,7 +33,9 @@ export function EntryMedia({ assetPath, title, className = "" }: EntryMediaProps
         loop
         muted
         playsInline
+        controls
         src={assetPath}
+        aria-label={`${title} demo video`}
       />
     );
   }
@@ -43,6 +45,7 @@ export function EntryMedia({ assetPath, title, className = "" }: EntryMediaProps
       className={`h-full w-full object-cover ${className}`}
       src={assetPath}
       alt={`${title} demo asset`}
+      loading="lazy"
     />
   );
 }

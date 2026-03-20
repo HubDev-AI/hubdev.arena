@@ -28,8 +28,7 @@ export async function GET(request: Request) {
     }
 
     return NextResponse.json(matchup);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load the next matchup.";
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Failed to load the next matchup." }, { status: 500 });
   }
 }

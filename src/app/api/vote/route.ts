@@ -14,7 +14,14 @@ const voteSchema = z.object({
 
 export async function POST(request: Request) {
   try {
-    const body = voteSchema.parse(await request.json());
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+
+    const body = voteSchema.parse(json);
     const voterContext = await getVoteRequestContext(request);
     if (!voterContext) {
       return NextResponse.json({ error: "Sign in to vote." }, { status: 401 });
@@ -32,7 +39,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(vote);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Vote failed.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid vote data." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Vote failed." }, { status: 400 });
   }
 }

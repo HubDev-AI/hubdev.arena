@@ -640,7 +640,7 @@ export function createArenaService(
 
     async getEntryDetail(entrySlug: string) {
       const entry = await repository.getEntryBySlug(entrySlug);
-      if (!entry) {
+      if (!entry || entry.status !== "approved") {
         return null;
       }
 

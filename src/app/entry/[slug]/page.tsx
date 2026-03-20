@@ -1,10 +1,32 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { EntryMedia } from "@/components/entry-media";
+import { InfoTooltip } from "@/components/info-tooltip";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const detail = await getArenaService().getEntryDetail(slug);
+  if (!detail) {
+    return { title: "Entry not found — HubDev Arena" };
+  }
+  return {
+    title: `${detail.entry.title} by ${detail.builder.displayName} — HubDev Arena`,
+    description: detail.entry.oneLiner,
+    openGraph: {
+      title: `${detail.entry.title} — HubDev Arena`,
+      description: detail.entry.oneLiner,
+    },
+  };
+}
 
 export default async function EntryDetailPage({
   params,
@@ -18,68 +40,93 @@ export default async function EntryDetailPage({
     notFound();
   }
 
-  return (
-    <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:px-8">
-      <div className="space-y-6">
-        <div className="space-y-3">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">
-            {detail.week.themeTitle}
-          </p>
-          <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
-            {detail.entry.title}
-          </h1>
-          <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
-            {detail.entry.oneLiner}
-          </p>
-        </div>
-        <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-[26rem]" />
-      </div>
+  const totalMatches = detail.entry.wins + detail.entry.losses;
+  const winRate = totalMatches > 0 ? Math.round((detail.entry.wins / totalMatches) * 100) : 0;
 
-      <aside className="space-y-5">
-        <div className="rounded-[2rem] border border-[var(--line)] bg-white/86 p-6 shadow-[0_20px_60px_rgba(8,18,30,0.08)]">
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
-            Builder
-          </p>
-          <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-            {detail.builder.displayName}
-          </p>
-          <p className="mt-2 text-sm text-[var(--muted)]">@{detail.builder.username}</p>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="rounded-[1.4rem] border border-[var(--line)] bg-[var(--paper)] p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                Elo
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-                {detail.entry.eloRating}
-              </p>
-            </div>
-            <div className="rounded-[1.4rem] border border-[var(--line)] bg-[var(--paper)] p-4">
-              <p className="font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--muted)]">
-                Record
-              </p>
-              <p className="mt-2 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]">
-                {detail.entry.wins}-{detail.entry.losses}
-              </p>
-            </div>
+  return (
+    <div className="page-bg page-bg-default">
+      <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
+        <Link href="/leaderboard" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[var(--muted)] transition hover:text-[var(--ink)] lg:col-span-2">&larr; Back to leaderboard</Link>
+        <div className="space-y-6">
+          <div className="space-y-3">
+            <nav className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]" aria-label="Breadcrumb">
+              <Link href="/leaderboard" className="transition hover:text-[var(--ink)]">
+                Leaderboard
+              </Link>
+              <span aria-hidden="true">/</span>
+              <span className="text-[var(--ink)]">{detail.week.themeTitle}</span>
+              <InfoTooltip tip="ELO rating from head-to-head votes. Higher is better.">
+                <span className="brutal-badge brutal-badge-green ml-1">
+                  ELO {detail.entry.eloRating}
+                </span>
+              </InfoTooltip>
+            </nav>
+            <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
+              {detail.entry.title}
+            </h1>
+            <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
+              {detail.entry.oneLiner}
+            </p>
           </div>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href={detail.entry.liveUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="rounded-full bg-[var(--ink)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.22em] text-[var(--paper)] transition hover:bg-[var(--cobalt)]"
-            >
-              Open app
-            </a>
-            <Link
-              href="/vote"
-              className="rounded-full border border-[var(--line)] px-5 py-3 text-sm font-semibold uppercase tracking-[0.18em] text-[var(--ink)] transition hover:border-[var(--ink)] hover:bg-[var(--paper)]"
-            >
-              Vote now
-            </Link>
+          <div className="brutal-card img-zoom overflow-hidden p-0">
+            <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-[26rem]" />
           </div>
         </div>
-      </aside>
+
+        <aside className="space-y-5">
+          <div className="brutal-card overflow-hidden p-0">
+            <div className="bg-[var(--ink)] px-6 py-4 text-[var(--surface)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">Builder</p>
+              <p className="mt-2 text-2xl font-black tracking-[-0.05em]">
+                {detail.builder.displayName}
+              </p>
+              {detail.builder.username ? (
+                <p className="mt-1 text-sm text-gray-400">@{detail.builder.username}</p>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-3 divide-x-[2px] divide-[var(--ink)] border-b-[2px] border-[var(--ink)]">
+              <div className="bg-[var(--paper)] p-4 text-center">
+                <p className="text-2xl font-black text-[var(--ink)]">{detail.entry.eloRating}</p>
+                <InfoTooltip tip="ELO rating — calculated from matchup results. Starts at 1200. Beating higher-rated entries earns more points.">
+                  <p className="brutal-label mt-1">ELO</p>
+                </InfoTooltip>
+              </div>
+              <div className="bg-[var(--paper)] p-4 text-center">
+                <p className="text-2xl font-black text-[var(--ink)]">{detail.entry.wins}-{detail.entry.losses}</p>
+                <InfoTooltip tip="Win/Loss record from head-to-head voting matchups.">
+                  <p className="brutal-label mt-1">Record</p>
+                </InfoTooltip>
+              </div>
+              <div className="bg-[var(--paper)] p-4 text-center">
+                <p className="text-2xl font-black text-[var(--ink)]">{winRate}%</p>
+                <InfoTooltip tip="Percentage of all matchups this entry has won.">
+                  <p className="brutal-label mt-1">Win rate</p>
+                </InfoTooltip>
+              </div>
+            </div>
+            {/* Win rate bar */}
+            <div className="h-2 w-full bg-[var(--bg)]">
+              <div
+                className="h-full bg-[var(--accent-green)] transition-all"
+                style={{ width: `${winRate}%` }}
+              />
+            </div>
+            <div className="flex flex-wrap gap-3 p-5">
+              <a
+                href={detail.entry.liveUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="brutal-btn brutal-btn-dark flex-1"
+              >
+                Open app
+              </a>
+              <Link href="/vote" className="brutal-btn brutal-btn-green flex-1">
+                Vote now
+              </Link>
+            </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

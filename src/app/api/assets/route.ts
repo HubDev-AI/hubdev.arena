@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { getDataMode } from "@/lib/env";
+import { getDataMode, getEnv } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
 import { buildDemoAssetObjectPath } from "@/lib/server/storage";
 import { createClient } from "@/lib/supabase/server";
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       });
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "Failed to upload asset." }, { status: 500 });
     }
 
     const { data: urlData } = supabase.storage
@@ -80,8 +80,7 @@ export async function POST(request: Request) {
       .getPublicUrl(objectPath);
 
     return NextResponse.json({ demoAssetPath: urlData.publicUrl });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Upload failed.";
-    return NextResponse.json({ error: message }, { status: 500 });
+  } catch {
+    return NextResponse.json({ error: "Upload failed." }, { status: 500 });
   }
 }

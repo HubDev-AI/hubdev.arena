@@ -13,17 +13,26 @@ const NAV_LINKS = [
 
 export function SiteHeader({ session, dataMode }: { session: BuilderSession | null; dataMode?: string }) {
   return (
-    <header className="sticky top-0 z-40 border-b-[3px] border-[var(--ink)] bg-[var(--surface)] shadow-[0_4px_0_rgba(10,10,10,0.06)]">
+    <header className="sticky top-0 z-40 border-b border-[var(--line)] bg-[var(--bg)]/90 backdrop-blur-xl shadow-[0_4px_30px_rgba(0,0,0,0.3)]">
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6 lg:px-8">
         <Link href="/" className="group flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center border-[3px] border-[var(--ink)] bg-[var(--ink)] font-mono text-xs font-bold uppercase tracking-wider text-[var(--surface)] shadow-[2px_2px_0px_var(--accent-green)] transition group-hover:bg-[var(--accent-green)] group-hover:text-[var(--ink)] group-hover:shadow-[2px_2px_0px_var(--ink)]">
+          <div className="relative flex h-10 w-10 items-center justify-center border border-[var(--accent-green)]/30 bg-[var(--surface)] font-mono text-xs font-bold uppercase tracking-wider text-[var(--accent-green)] shadow-[0_0_10px_rgba(0,255,65,0.15)] transition-all group-hover:bg-[var(--accent-green)] group-hover:text-[var(--ink)] group-hover:shadow-[0_0_20px_rgba(0,255,65,0.4)]">
             HA
           </div>
           <div className="hidden sm:block">
             <p className="brutal-label">Weekly battles for AI-built apps</p>
-            <p className="text-lg font-black tracking-tight text-[var(--ink)]">
-              HubDev Arena
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
+                HubDev Arena
+              </p>
+              <span className="inline-flex items-center gap-1 rounded-sm border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase tracking-widest text-[var(--accent-green)]">
+                <span className="relative flex h-1.5 w-1.5">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent-green)] opacity-75" />
+                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-green)]" />
+                </span>
+                Live
+              </span>
+            </div>
           </div>
         </Link>
 
@@ -32,7 +41,7 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
             <Link
               key={link.href}
               href={link.href}
-              className="border-2 border-transparent px-3 py-2 font-mono text-xs font-bold uppercase tracking-widest text-[var(--ink)] transition hover:border-[var(--ink)] hover:bg-[var(--accent-green)] focus-visible:border-[var(--ink)] focus-visible:bg-[var(--accent-green)] focus-visible:outline-none"
+              className="animated-underline border-2 border-transparent px-3 py-2 font-mono text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)] transition-all hover:border-[var(--accent-green)] hover:bg-[var(--accent-green)]/10 hover:text-[var(--accent-green)] hover:shadow-[0_0_10px_rgba(0,255,65,0.15)] focus-visible:border-[var(--accent-green)] focus-visible:bg-[var(--accent-green)]/10 focus-visible:outline-none"
             >
               {link.label}
             </Link>
@@ -44,11 +53,17 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
           <div className="hidden items-center gap-2 sm:flex">
             {session ? (
               <>
-                <div className="text-right">
-                  <p className="text-sm font-bold text-[var(--ink)]">{session.displayName}</p>
-                  <p className="brutal-label">
-                    {session.isAdmin ? "Admin" : "Member"}
-                  </p>
+                <div className="flex items-center gap-2.5 rounded-sm border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 px-3 py-1.5 transition-all hover:border-[var(--accent-green)]/40 hover:shadow-[0_0_12px_rgba(0,255,65,0.1)]">
+                  {/* Initials avatar */}
+                  <div className="flex h-7 w-7 items-center justify-center bg-[var(--accent-green)]/10 font-mono text-[10px] font-bold text-[var(--accent-green)]" style={{ boxShadow: "inset 0 0 8px rgba(0, 255, 65, 0.08)" }}>
+                    {session.displayName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-xs font-bold leading-tight text-[var(--text-primary)]">{session.displayName}</p>
+                    <p className="font-mono text-[8px] uppercase tracking-[0.2em] leading-tight text-[var(--accent-green)]">
+                      {session.isAdmin ? "Admin" : "Member"}
+                    </p>
+                  </div>
                 </div>
                 <Link
                   href="/my-submissions"
@@ -78,7 +93,7 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
           <MobileMenu session={session} dataMode={dataMode} navLinks={NAV_LINKS} />
         </div>
       </div>
-      <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-[var(--accent-green)] to-transparent" />
+      <div className="h-[2px] w-full" style={{ background: "linear-gradient(90deg, transparent, var(--accent-green), var(--accent-blue), var(--accent-green), transparent)", backgroundSize: "200% 100%", animation: "border-flow 4s ease infinite" }} />
     </header>
   );
 }

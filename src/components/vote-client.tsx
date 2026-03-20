@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { EntryMedia } from "@/components/entry-media";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { LiveLeaderboard } from "@/components/live-leaderboard";
+import { ProgressRing } from "@/components/progress-ring";
 import { safeHref } from "@/lib/safe-href";
 import type { LeaderboardRow, VoteDeck } from "@/lib/server/types";
 
@@ -171,14 +172,14 @@ export function VoteClient({
   if (isFinished) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <div className="brutal-card relative overflow-hidden bg-[var(--ink)] p-8 text-white">
+        <div className="brutal-card relative overflow-hidden bg-[var(--ink)] p-8 text-white neon-box scanlines">
           <div className="absolute right-0 top-0 h-16 w-16 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
-          <div className="absolute bottom-0 left-0 h-1.5 w-full bg-[var(--accent-green)]" />
-          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--accent-green)]">
+          <div className="absolute bottom-0 left-0 h-1.5 w-full bg-[var(--accent-green)]" style={{ boxShadow: "0 0 20px rgba(0, 255, 65, 0.4)" }} />
+          <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--accent-green)] neon-text">
             Voting sprint complete
           </p>
           <div className="mt-4 flex items-baseline gap-3">
-            <span className="text-6xl font-black text-[var(--accent-green)] sm:text-7xl">{votesCompleted}</span>
+            <span className="text-6xl font-black text-[var(--accent-green)] sm:text-7xl" style={{ textShadow: "0 0 30px rgba(0, 255, 65, 0.4), 0 0 60px rgba(0, 255, 65, 0.15)" }}>{votesCompleted}</span>
             <span className="text-2xl font-black sm:text-3xl">votes cast</span>
           </div>
           <p className="mt-3 max-w-2xl text-base leading-7 text-gray-400">
@@ -191,7 +192,7 @@ export function VoteClient({
             <button
               type="button"
               onClick={() => { setIsFinished(false); setVotesCompleted(0); void loadNextMatchup(); }}
-              className="brutal-btn brutal-btn-outline"
+              className="brutal-btn brutal-btn-outline hover-lift"
             >
               Vote 10 more
             </button>
@@ -207,7 +208,7 @@ export function VoteClient({
       {/* Vote success toast */}
       {showVoteSuccess ? (
         <div className="absolute left-1/2 top-0 z-50 -translate-x-1/2 -translate-y-full animate-slide-up">
-          <div className="brutal-badge brutal-badge-green px-4 py-2 text-xs shadow-[var(--shadow-sm)]">
+          <div className="brutal-badge brutal-badge-green px-4 py-2 text-xs neon-text" style={{ boxShadow: "var(--shadow-sm), 0 0 20px rgba(0, 255, 65, 0.3)" }}>
             Vote recorded
           </div>
         </div>
@@ -224,25 +225,32 @@ export function VoteClient({
       ) : null}
 
       {/* Progress bar */}
-      <div className="brutal-card overflow-hidden p-0">
+      <div className="brutal-card overflow-hidden p-0 neon-box">
         <div className="flex items-center justify-between gap-4 px-5 py-4">
           <div>
             <InfoTooltip tip="Each voting session consists of 10 matchups. Pick the app you think is better in each head-to-head pairing.">
               <p className="brutal-label">Signed-in voting streak</p>
             </InfoTooltip>
-            <p className="text-xl font-black tracking-tight text-[var(--ink)]">
+            <p className="text-xl font-black tracking-tight text-[var(--text-primary)]">
               Vote {votesCompleted + 1} of 10
             </p>
           </div>
-          <div className="brutal-badge brutal-badge-green">
-            ~2 min
+          <div className="relative flex items-center justify-center">
+            <ProgressRing progress={(votesCompleted / 10) * 100} size={48} />
+            <span className="absolute font-mono text-[10px] font-bold text-[var(--accent-green)]">
+              {votesCompleted}/10
+            </span>
           </div>
         </div>
         {/* Visual progress */}
-        <div className="h-1.5 w-full bg-[var(--bg)]">
+        <div className="h-2 w-full bg-[var(--bg)]">
           <div
-            className="h-full bg-[var(--accent-green)] transition-all duration-500"
-            style={{ width: `${((votesCompleted) / 10) * 100}%` }}
+            className="h-full transition-all duration-500"
+            style={{
+              width: `${((votesCompleted) / 10) * 100}%`,
+              background: "linear-gradient(90deg, var(--accent-green), var(--accent-blue))",
+              boxShadow: "0 0 10px rgba(0, 255, 65, 0.3)",
+            }}
           />
         </div>
       </div>
@@ -251,12 +259,12 @@ export function VoteClient({
         <div className="vote-grid">
           {[0, 1].map((i) => (
             <div key={i} className={`brutal-card overflow-hidden ${i === 0 ? "border-t-[3px] border-t-[var(--accent-green)]" : "border-t-[3px] border-t-[var(--accent-blue)]"}`}>
-              <div className="h-56 animate-pulse bg-[var(--ink)]/10 sm:h-72" />
-              <div className="space-y-4 border-t-[3px] border-[var(--ink)] p-5">
-                <div className="h-4 w-24 animate-pulse bg-[var(--ink)]/10" />
-                <div className="h-8 w-48 animate-pulse bg-[var(--ink)]/10" />
-                <div className="h-4 w-full animate-pulse bg-[var(--ink)]/10" />
-                <div className="h-10 w-32 animate-pulse bg-[var(--ink)]/10" />
+              <div className="h-56 skeleton-shimmer sm:h-72" />
+              <div className="space-y-4 border-t-[3px] border-[var(--line)] p-5">
+                <div className="h-4 w-24 skeleton-shimmer" />
+                <div className="h-8 w-48 skeleton-shimmer" />
+                <div className="h-4 w-full skeleton-shimmer" />
+                <div className="h-10 w-32 skeleton-shimmer" />
               </div>
             </div>
           ))}
@@ -268,11 +276,11 @@ export function VoteClient({
             const otherEntry = index === 0 ? matchup.rightEntry : matchup.leftEntry;
             const isLeft = index === 0;
             return (
-              <article key={entry.id} className={`brutal-card overflow-hidden ${isLeft ? "vote-enter-left border-t-[3px] border-t-[var(--accent-green)]" : "vote-enter-right border-t-[3px] border-t-[var(--accent-blue)]"}`}>
+              <article key={entry.id} className={`brutal-card overflow-hidden hover-lift holo-shimmer ${isLeft ? "vote-enter-left border-t-[3px] border-t-[var(--accent-green)]" : "vote-enter-right border-t-[3px] border-t-[var(--accent-blue)]"}`}>
                 <div className="img-zoom">
                   <EntryMedia assetPath={entry.demoAssetPath} title={entry.title} className="h-56 sm:h-72" />
                 </div>
-                <div className="space-y-4 border-t-[3px] border-[var(--ink)] p-5">
+                <div className="space-y-4 border-t-[3px] border-[var(--line)] p-5">
                   <div className="flex items-center justify-between gap-4">
                     <div>
                       <InfoTooltip tip={entry.foundingBuilder ? "Founding builder — one of the original members of the HubDev Arena community." : "Builder — the developer who created and submitted this entry."}>
@@ -280,21 +288,22 @@ export function VoteClient({
                           {entry.foundingBuilder ? "Founding builder" : "Builder"}
                         </p>
                       </InfoTooltip>
-                      <h2 className="mt-1 text-2xl font-black tracking-tight text-[var(--ink)]">
+                      <h2 className="mt-1 text-2xl font-black tracking-tight text-[var(--text-primary)] animated-underline">
                         {entry.title}
                       </h2>
                     </div>
-                    <span className="border-[2px] border-[var(--ink)] bg-[var(--bg)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--ink)]">
+                    <span className="border-[2px] border-[var(--line)] bg-[var(--bg)] px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)]">
                       {entry.builderName}
                     </span>
                   </div>
-                  <p className="text-base leading-7 text-[var(--muted)]">{entry.oneLiner}</p>
+                  <p className="text-base leading-7 text-[var(--text-secondary)]">{entry.oneLiner}</p>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
                       disabled={isSubmitting}
                       onClick={() => castVote(entry.id, otherEntry.id)}
-                      className={`brutal-btn px-6 py-4 text-sm ${isLeft ? "brutal-btn-green" : "brutal-btn-blue"} disabled:opacity-50`}
+                      className={`brutal-btn px-6 py-4 text-sm hover-lift ${isLeft ? "brutal-btn-green" : "brutal-btn-blue"} disabled:opacity-50`}
+                      style={isLeft ? { boxShadow: "var(--shadow-sm), 0 0 15px rgba(0, 255, 65, 0.15)" } : { boxShadow: "var(--shadow-sm), 0 0 15px rgba(0, 51, 255, 0.15)" }}
                     >
                       Pick this app
                     </button>
@@ -302,7 +311,7 @@ export function VoteClient({
                       href={safeHref(entry.liveUrl)}
                       target="_blank"
                       rel="noreferrer"
-                      className="brutal-btn brutal-btn-outline"
+                      className="brutal-btn brutal-btn-outline hover-lift"
                     >
                       Open app
                     </a>
@@ -313,9 +322,9 @@ export function VoteClient({
           })}
         </div>
       ) : (
-        <div className="brutal-card p-8 text-center">
-          <p className="text-lg font-black text-[var(--ink)]">No fresh matchups right now</p>
-          <p className="mt-2 text-sm text-[var(--muted)]">All available pairs have been voted on. Check back later or view the leaderboard.</p>
+        <div className="brutal-card p-8 text-center neon-box">
+          <p className="text-lg font-black text-[var(--text-primary)] neon-text">No fresh matchups right now</p>
+          <p className="mt-2 text-sm text-[var(--text-secondary)]">All available pairs have been voted on. Check back later or view the leaderboard.</p>
           <a href="/leaderboard" className="brutal-btn brutal-btn-outline mt-4">
             View leaderboard
           </a>

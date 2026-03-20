@@ -39,7 +39,7 @@ export function LogoutButton({ dataMode }: { dataMode?: string }) {
         {isLoading ? "..." : "Sign out"}
       </button>
       {error ? (
-        <span className="font-mono text-[10px] text-red-700">{error}</span>
+        <span className="font-mono text-[10px] text-red-400">{error}</span>
       ) : null}
     </div>
   );

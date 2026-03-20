@@ -59,7 +59,7 @@ export function CreateWeekForm() {
         <p className="brutal-label">
           Create week
         </p>
-        <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-[var(--ink)]">
+        <h2 className="mt-2 text-2xl font-black uppercase tracking-[-0.05em] text-[var(--text-primary)]">
           Seed the next round
         </h2>
       </div>
@@ -137,8 +137,8 @@ export function CreateWeekForm() {
       </button>
 
       {error ? (
-        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-50 px-4 py-3">
-          <p className="font-mono text-sm font-bold text-red-700">{error}</p>
+        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-900/20 px-4 py-3">
+          <p className="font-mono text-sm font-bold text-red-400">{error}</p>
         </div>
       ) : null}
     </form>

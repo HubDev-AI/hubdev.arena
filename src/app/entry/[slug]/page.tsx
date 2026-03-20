@@ -2,9 +2,15 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AnimatedCounter } from "@/components/animated-counter";
+import { AuroraBg } from "@/components/aurora-bg";
+import { DecodeText } from "@/components/decode-text";
 import { EntryMedia } from "@/components/entry-media";
+import { GlitchText } from "@/components/glitch-text";
 import { InfoTooltip } from "@/components/info-tooltip";
 import { JsonLd } from "@/components/json-ld";
+import { LiveBadge } from "@/components/live-badge";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { safeHref } from "@/lib/safe-href";
 import { getArenaService } from "@/lib/server/runtime";
 
@@ -105,15 +111,16 @@ export default async function EntryDetailPage({
       <JsonLd data={entryJsonLd} />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
         {/* Dark hero banner — matches homepage style */}
-        <div className="brutal-card relative overflow-hidden arena-hero-bg p-6 text-white sm:p-8">
+        <div className="brutal-card relative overflow-hidden arena-hero-bg neon-box scanlines p-6 text-white sm:p-8">
+          <AuroraBg />
           <div className="absolute right-0 top-0 h-20 w-20 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
             backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 11px)",
           }} />
           <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" />
 
-          <Link href="/leaderboard" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-gray-400 transition hover:text-white">
-            &larr; Back to leaderboard
+          <Link href="/leaderboard" className="group inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-gray-400 transition hover:text-white">
+            <span className="inline-block transition-transform group-hover:-translate-x-1">&larr;</span> Back to leaderboard
           </Link>
 
           <div className="mt-4">
@@ -122,15 +129,16 @@ export default async function EntryDetailPage({
                 Leaderboard
               </Link>
               <span aria-hidden="true">/</span>
-              <span className="text-[var(--accent-green)]">{detail.week.themeTitle}</span>
+              <span className="neon-text text-[var(--accent-green)]">{detail.week.themeTitle}</span>
+              <LiveBadge className="ml-2" />
             </nav>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
-                {detail.entry.title}
+                <GlitchText text={detail.entry.title} />
               </h1>
               <InfoTooltip tip="ELO rating from head-to-head votes. Higher is better.">
-                <span className="brutal-badge brutal-badge-green">
-                  ELO {detail.entry.eloRating}
+                <span className="brutal-badge brutal-badge-green neon-text">
+                  ELO <AnimatedCounter value={detail.entry.eloRating} />
                 </span>
               </InfoTooltip>
             </div>
@@ -141,23 +149,23 @@ export default async function EntryDetailPage({
 
           {/* Inline stats row */}
           <div className="mt-6 grid gap-3 sm:grid-cols-4">
-            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-green)]">
+            <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-green)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Builder</p>
               <p className="mt-1 text-sm font-black tracking-tight text-white">{detail.builder.displayName}</p>
             </div>
-            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-blue)]">
+            <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-blue)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">ELO rating</p>
-              <p className="mt-1 text-sm font-black tracking-tight text-[var(--accent-green)]">{detail.entry.eloRating}</p>
+              <p className="mt-1 text-sm font-black tracking-tight neon-text text-[var(--accent-green)]"><AnimatedCounter value={detail.entry.eloRating} /></p>
             </div>
-            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-yellow)]">
+            <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-yellow)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Record</p>
               <p className="mt-1 text-sm font-black tracking-tight">
-                <span className="text-[var(--accent-green)]">{detail.entry.wins}W</span>
+                <span className="neon-text text-[var(--accent-green)]">{detail.entry.wins}W</span>
                 <span className="text-gray-500"> / </span>
                 <span className="text-red-400">{detail.entry.losses}L</span>
               </p>
             </div>
-            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-green)]">
+            <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-cyan)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Win rate</p>
               <p className="mt-1 text-sm font-black tracking-tight text-white">{winRate}%</p>
             </div>
@@ -165,48 +173,50 @@ export default async function EntryDetailPage({
         </div>
 
         {/* Demo + actions row */}
+        <ScrollReveal>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
           {/* Demo screenshot */}
-          <div className="brutal-card img-zoom overflow-hidden p-0 relative">
+          <div className="brutal-card img-zoom hud-corners overflow-hidden p-0 relative">
             <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-48 sm:h-64" />
             <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-green)]/40 to-transparent" />
           </div>
 
           {/* Sidebar — stretches to match */}
-          <div className="brutal-card flex flex-col overflow-hidden p-0 border-l-[4px] border-l-[var(--accent-green)]">
+          <div className="brutal-card holo-shimmer hud-corners flex flex-col overflow-hidden p-0 border-l-[4px] border-l-[var(--accent-green)]">
             <div className="bg-[var(--ink)] px-5 py-3">
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">Actions</p>
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] neon-text text-[var(--accent-green)]">Actions</p>
             </div>
             <div className="space-y-3 p-4">
               <a
                 href={safeHref(detail.entry.liveUrl)}
                 target="_blank"
                 rel="noreferrer"
-                className="brutal-btn brutal-btn-green w-full text-center"
+                className="brutal-btn brutal-btn-green hover-lift w-full text-center"
               >
                 Open app &rarr;
               </a>
-              <Link href="/vote" className="brutal-btn brutal-btn-outline w-full text-center">
+              <Link href="/vote" className="brutal-btn brutal-btn-outline hover-lift w-full text-center">
                 Vote in matchups
               </Link>
             </div>
-            <div className="mt-auto border-t-[2px] border-[var(--ink)] px-4 py-3">
+            <div className="mt-auto border-t-[2px] border-[var(--line)] px-4 py-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="font-bold text-[var(--ink)]">Win rate</span>
-                <span className="font-mono font-black text-[var(--ink)]">{winRate}%</span>
+                <span className="font-bold text-[var(--text-primary)]">Win rate</span>
+                <span className="font-mono font-black text-[var(--text-primary)]">{winRate}%</span>
               </div>
-              <div className="mt-2 h-3 w-full overflow-hidden border-[2px] border-[var(--ink)] bg-[var(--bg)]">
+              <div className="mt-2 h-3 w-full overflow-hidden border-[2px] border-[var(--line)] bg-[var(--bg)]">
                 <div
                   className="h-full bg-gradient-to-r from-[var(--accent-green)] to-[var(--accent-blue)] transition-all"
-                  style={{ width: `${winRate}%` }}
+                  style={{ width: `${winRate}%`, boxShadow: "0 0 8px rgba(0, 255, 65, 0.2)" }}
                 />
               </div>
-              <p className="mt-2 text-xs text-[var(--muted)]">
+              <p className="mt-2 text-xs text-[var(--text-secondary)]">
                 {totalMatches} matchups &middot; {detail.week.themeTitle}
               </p>
             </div>
           </div>
         </div>
+        </ScrollReveal>
       </div>
     </div>
   );

@@ -17,13 +17,14 @@ export default async function MySubmissionsPage() {
   return (
     <div className="page-bg page-bg-default">
       <div className="mx-auto flex w-full max-w-5xl flex-col gap-8 px-4 py-10 sm:px-6 lg:px-8">
-        <div className="brutal-card p-6 sm:p-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--muted)]">
+        <div className="brutal-card overflow-hidden p-6 sm:p-8">
+          <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">
             My submissions
           </p>
           <h1 className="mt-2 text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
             Builder dashboard
           </h1>
+          <div className="mt-4 h-[3px] w-full" style={{ background: "linear-gradient(to right, var(--accent-green), var(--accent-blue), transparent)" }} />
         </div>
 
         {groups.length > 0 ? (

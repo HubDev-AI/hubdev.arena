@@ -85,7 +85,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
       <div className="grid gap-5 p-6 md:grid-cols-2">
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
-            <span className="brutal-label">Title</span>
+            <span className="brutal-label text-[var(--accent-green)]">Title</span>
             <span className={`font-mono text-[10px] ${titleLen > 50 ? "text-red-700" : "text-[var(--muted)]"}`}>
               {titleLen}/60
             </span>
@@ -101,7 +101,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         </label>
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
-            <span className="brutal-label">One-liner</span>
+            <span className="brutal-label text-[var(--accent-green)]">One-liner</span>
             <span className={`font-mono text-[10px] ${oneLinerLen > 120 ? "text-red-700" : "text-[var(--muted)]"}`}>
               {oneLinerLen}/140
             </span>
@@ -117,7 +117,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
           />
         </label>
         <label className="space-y-2">
-          <span className="brutal-label">Live URL</span>
+          <span className="brutal-label text-[var(--accent-green)]">Live URL</span>
           <input
             required
             name="liveUrl"
@@ -127,7 +127,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
           />
         </label>
         <label className="space-y-2">
-          <span className="brutal-label">Demo asset (GIF or MP4)</span>
+          <span className="brutal-label text-[var(--accent-green)]">Demo asset (GIF or MP4)</span>
           <input
             required
             name="demoAsset"

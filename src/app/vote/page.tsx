@@ -35,7 +35,7 @@ export default async function VotePage() {
             <Link href="/login?next=%2Fvote" className="brutal-btn brutal-btn-green">
               Sign in to start voting
             </Link>
-            <Link href="/leaderboard" className="brutal-btn bg-white text-[var(--ink)]">
+            <Link href="/leaderboard" className="brutal-btn brutal-btn-outline">
               View leaderboard
             </Link>
           </div>
@@ -78,15 +78,20 @@ export default async function VotePage() {
     );
   }
 
-  if (!week) {
+  if (!week || week.status !== "voting_open") {
     return (
+      <div className="page-bg page-bg-vote">
       <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
         <div className="brutal-card p-8">
           <p className="brutal-label">Voting</p>
           <p className="mt-2 text-xl font-bold text-[var(--ink)]">
-            No active week is available for voting.
+            No active voting round right now. Check back when a week opens for voting.
           </p>
+          <div className="mt-4 flex gap-3">
+            <Link href="/leaderboard" className="brutal-btn brutal-btn-outline">View leaderboard</Link>
+          </div>
         </div>
+      </div>
       </div>
     );
   }

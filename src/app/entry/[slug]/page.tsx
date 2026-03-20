@@ -45,87 +45,110 @@ export default async function EntryDetailPage({
 
   return (
     <div className="page-bg page-bg-default">
-      <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
-        <Link href="/leaderboard" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[var(--muted)] transition hover:text-[var(--ink)] lg:col-span-2">&larr; Back to leaderboard</Link>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <nav className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-[var(--muted)]" aria-label="Breadcrumb">
-              <Link href="/leaderboard" className="transition hover:text-[var(--ink)]">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
+        {/* Dark hero banner — matches homepage style */}
+        <div className="brutal-card relative overflow-hidden arena-hero-bg p-6 text-white sm:p-8">
+          <div className="absolute right-0 top-0 h-20 w-20 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
+          <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
+            backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 10px, rgba(255,255,255,1) 10px, rgba(255,255,255,1) 11px)",
+          }} />
+          <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" />
+
+          <Link href="/leaderboard" className="inline-flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-gray-400 transition hover:text-white">
+            &larr; Back to leaderboard
+          </Link>
+
+          <div className="mt-4">
+            <nav className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-gray-400" aria-label="Breadcrumb">
+              <Link href="/leaderboard" className="transition hover:text-white">
                 Leaderboard
               </Link>
               <span aria-hidden="true">/</span>
-              <span className="text-[var(--ink)]">{detail.week.themeTitle}</span>
+              <span className="text-[var(--accent-green)]">{detail.week.themeTitle}</span>
+            </nav>
+            <div className="mt-2 flex flex-wrap items-center gap-3">
+              <h1 className="text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
+                {detail.entry.title}
+              </h1>
               <InfoTooltip tip="ELO rating from head-to-head votes. Higher is better.">
-                <span className="brutal-badge brutal-badge-green ml-1">
+                <span className="brutal-badge brutal-badge-green">
                   ELO {detail.entry.eloRating}
                 </span>
               </InfoTooltip>
-            </nav>
-            <h1 className="text-4xl font-black uppercase tracking-[-0.06em] text-[var(--ink)]">
-              {detail.entry.title}
-            </h1>
-            <p className="max-w-2xl text-lg leading-8 text-[var(--muted)]">
+            </div>
+            <p className="mt-2 max-w-2xl text-base leading-7 text-gray-300">
               {detail.entry.oneLiner}
             </p>
           </div>
-          <div className="brutal-card img-zoom overflow-hidden p-0">
-            <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-[26rem]" />
+
+          {/* Inline stats row */}
+          <div className="mt-6 grid gap-3 sm:grid-cols-4">
+            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-green)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Builder</p>
+              <p className="mt-1 text-sm font-black tracking-tight text-white">{detail.builder.displayName}</p>
+            </div>
+            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-blue)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">ELO rating</p>
+              <p className="mt-1 text-sm font-black tracking-tight text-[var(--accent-green)]">{detail.entry.eloRating}</p>
+            </div>
+            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-yellow)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Record</p>
+              <p className="mt-1 text-sm font-black tracking-tight">
+                <span className="text-[var(--accent-green)]">{detail.entry.wins}W</span>
+                <span className="text-gray-500"> / </span>
+                <span className="text-red-400">{detail.entry.losses}L</span>
+              </p>
+            </div>
+            <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-green)]">
+              <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Win rate</p>
+              <p className="mt-1 text-sm font-black tracking-tight text-white">{winRate}%</p>
+            </div>
           </div>
         </div>
 
-        <aside className="space-y-5">
-          <div className="brutal-card overflow-hidden p-0">
-            <div className="bg-[var(--ink)] px-6 py-4 text-[var(--surface)]">
-              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">Builder</p>
-              <p className="mt-2 text-2xl font-black tracking-[-0.05em]">
-                {detail.builder.displayName}
-              </p>
-              {detail.builder.username ? (
-                <p className="mt-1 text-sm text-gray-400">@{detail.builder.username}</p>
-              ) : null}
+        {/* Demo + actions row */}
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
+          {/* Demo screenshot */}
+          <div className="brutal-card img-zoom overflow-hidden p-0 relative">
+            <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-48 sm:h-64" />
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-green)]/40 to-transparent" />
+          </div>
+
+          {/* Sidebar — stretches to match */}
+          <div className="brutal-card flex flex-col overflow-hidden p-0 border-l-[4px] border-l-[var(--accent-green)]">
+            <div className="bg-[var(--ink)] px-5 py-3">
+              <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">Actions</p>
             </div>
-            <div className="grid grid-cols-3 divide-x-[2px] divide-[var(--ink)] border-b-[2px] border-[var(--ink)]">
-              <div className="bg-[var(--paper)] p-4 text-center">
-                <p className="text-2xl font-black text-[var(--ink)]">{detail.entry.eloRating}</p>
-                <InfoTooltip tip="ELO rating — calculated from matchup results. Starts at 1200. Beating higher-rated entries earns more points.">
-                  <p className="brutal-label mt-1">ELO</p>
-                </InfoTooltip>
-              </div>
-              <div className="bg-[var(--paper)] p-4 text-center">
-                <p className="text-2xl font-black text-[var(--ink)]">{detail.entry.wins}-{detail.entry.losses}</p>
-                <InfoTooltip tip="Win/Loss record from head-to-head voting matchups.">
-                  <p className="brutal-label mt-1">Record</p>
-                </InfoTooltip>
-              </div>
-              <div className="bg-[var(--paper)] p-4 text-center">
-                <p className="text-2xl font-black text-[var(--ink)]">{winRate}%</p>
-                <InfoTooltip tip="Percentage of all matchups this entry has won.">
-                  <p className="brutal-label mt-1">Win rate</p>
-                </InfoTooltip>
-              </div>
-            </div>
-            {/* Win rate bar */}
-            <div className="h-2 w-full bg-[var(--bg)]">
-              <div
-                className="h-full bg-[var(--accent-green)] transition-all"
-                style={{ width: `${winRate}%` }}
-              />
-            </div>
-            <div className="flex flex-wrap gap-3 p-5">
+            <div className="space-y-3 p-4">
               <a
                 href={detail.entry.liveUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="brutal-btn brutal-btn-dark flex-1"
+                className="brutal-btn brutal-btn-green w-full text-center"
               >
-                Open app
+                Open app &rarr;
               </a>
-              <Link href="/vote" className="brutal-btn brutal-btn-green flex-1">
-                Vote now
+              <Link href="/vote" className="brutal-btn brutal-btn-outline w-full text-center">
+                Vote in matchups
               </Link>
             </div>
+            <div className="mt-auto border-t-[2px] border-[var(--ink)] px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="font-bold text-[var(--ink)]">Win rate</span>
+                <span className="font-mono font-black text-[var(--ink)]">{winRate}%</span>
+              </div>
+              <div className="mt-2 h-3 w-full overflow-hidden border-[2px] border-[var(--ink)] bg-[var(--bg)]">
+                <div
+                  className="h-full bg-gradient-to-r from-[var(--accent-green)] to-[var(--accent-blue)] transition-all"
+                  style={{ width: `${winRate}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-[var(--muted)]">
+                {totalMatches} matchups &middot; {detail.week.themeTitle}
+              </p>
+            </div>
           </div>
-        </aside>
+        </div>
       </div>
     </div>
   );

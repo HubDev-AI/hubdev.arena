@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { LoginForm } from "@/components/login-form";
 import { MockLoginPanel } from "@/components/mock-login-panel";
-import { getDataMode } from "@/lib/env";
+import { getAdminAllowlist, getDataMode } from "@/lib/env";
 import { resolveLoginRedirectPath } from "@/lib/login-redirect";
 import { getBuilderSession } from "@/lib/server/auth";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
@@ -63,7 +63,7 @@ export default async function LoginPage({
                   id: profile.id,
                   displayName: profile.displayName,
                   email: profile.email ?? "",
-                  isAdmin: profile.email === "admin@example.com",
+                  isAdmin: getAdminAllowlist().includes((profile.email ?? "").toLowerCase()),
                 }))}
                 redirectTo={redirectTo}
               />

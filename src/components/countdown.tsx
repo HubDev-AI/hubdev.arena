@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 function getCountdownParts(targetIso: string) {
   const distance = Math.max(0, new Date(targetIso).getTime() - Date.now());
@@ -11,26 +11,38 @@ function getCountdownParts(targetIso: string) {
   return { days, hours, minutes };
 }
 
-export function Countdown({ targetIso, label }: { targetIso: string; label: string }) {
-  const [parts, setParts] = useState<{ days: number; hours: number; minutes: number } | null>(null);
+function useCountdown(targetIso: string) {
+  // Force a re-render every 60s via useSyncExternalStore
+  const subscribe = useMemo(() => {
+    return (onStoreChange: () => void) => {
+      const timer = setInterval(onStoreChange, 60_000);
+      return () => clearInterval(timer);
+    };
+  }, []);
 
-  useEffect(() => {
-    setParts(getCountdownParts(targetIso));
-    const timer = window.setInterval(() => {
-      setParts(getCountdownParts(targetIso));
-    }, 60_000);
-
-    return () => window.clearInterval(timer);
-  }, [targetIso]);
-
-  const items = useMemo(
-    () => [
-      { label: "Days", value: parts ? String(parts.days).padStart(2, "0") : "--" },
-      { label: "Hours", value: parts ? String(parts.hours).padStart(2, "0") : "--" },
-      { label: "Minutes", value: parts ? String(parts.minutes).padStart(2, "0") : "--" },
-    ],
-    [parts],
+  // getSnapshot returns a stable string key so React can diff
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => {
+      const p = getCountdownParts(targetIso);
+      return `${p.days}:${p.hours}:${p.minutes}`;
+    },
+    // Server snapshot — render placeholder
+    () => "--:--:--",
   );
+
+  const [days, hours, minutes] = snapshot.split(":").map((v) => (v === "--" ? null : Number(v)));
+  return { days, hours, minutes };
+}
+
+export function Countdown({ targetIso, label }: { targetIso: string; label: string }) {
+  const { days, hours, minutes } = useCountdown(targetIso);
+
+  const items = [
+    { label: "Days", value: days != null ? String(days).padStart(2, "0") : "--" },
+    { label: "Hours", value: hours != null ? String(hours).padStart(2, "0") : "--" },
+    { label: "Minutes", value: minutes != null ? String(minutes).padStart(2, "0") : "--" },
+  ];
 
   return (
     <div className="brutal-card overflow-hidden p-0">

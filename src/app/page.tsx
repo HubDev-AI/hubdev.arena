@@ -231,7 +231,11 @@ export default async function Home() {
                     </span>
                   </InfoTooltip>
                   <InfoTooltip tip="Win/Loss record from head-to-head matchups.">
-                    <span className="font-mono text-[10px] text-[var(--muted)]">{entry.wins}W / {entry.losses}L</span>
+                    <span className="font-mono text-xs font-bold text-[var(--muted)] whitespace-nowrap">
+                      <span className="text-emerald-700">{entry.wins}W</span>
+                      {" / "}
+                      <span className="text-red-700">{entry.losses}L</span>
+                    </span>
                   </InfoTooltip>
                 </div>
                 <div className="flex gap-2">

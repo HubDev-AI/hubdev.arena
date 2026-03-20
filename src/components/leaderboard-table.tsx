@@ -37,7 +37,7 @@ export function LeaderboardTable({
         {rows.map((row) => (
           <div
             key={row.entrySlug}
-            className={`grid gap-4 px-5 py-4 transition hover:bg-[var(--paper)] sm:grid-cols-[120px_minmax(0,1fr)_160px] ${row.rank === 1 ? "bg-gradient-to-r from-[#FFF8E1] to-[var(--paper)] border-l-4 border-l-[#D4A017]" : ""}`}
+            className={`grid gap-4 px-5 py-4 transition hover:bg-[var(--paper)] sm:grid-cols-[120px_minmax(0,1fr)_200px] ${row.rank === 1 ? "bg-gradient-to-r from-[#FFF8E1] to-[var(--paper)] border-l-4 border-l-[#D4A017]" : ""}`}
           >
             <div className="flex items-center gap-3">
               <span className={`${row.rank === 1 ? "text-4xl" : "text-3xl"} font-black tracking-tight shrink-0 ${row.rank === 1 ? "rank-gold" : row.rank === 2 ? "rank-silver" : row.rank === 3 ? "rank-bronze" : "text-[var(--ink)]"}`}>
@@ -59,13 +59,13 @@ export function LeaderboardTable({
               <p className="mt-0.5 truncate text-sm text-[var(--muted)]">by {row.builderName}</p>
             </div>
             <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <div className="text-right">
+              <div className="text-right whitespace-nowrap">
                 <InfoTooltip tip="Win/Loss record from head-to-head voting. Each vote = one matchup between two entries.">
                   <p className="brutal-label">Record</p>
                 </InfoTooltip>
-                <p className="text-sm font-bold text-[var(--ink)]">
+                <p className="text-sm font-bold">
                   <span className="text-emerald-700">{row.wins}W</span>
-                  {" / "}
+                  <span className="text-[var(--muted)]"> / </span>
                   <span className="text-red-700">{row.losses}L</span>
                 </p>
               </div>

@@ -41,12 +41,12 @@ export function Countdown({ targetIso, label }: { targetIso: string; label: stri
         {items.map((item) => (
           <div
             key={item.label}
-            className="bg-[var(--surface)] p-4 text-center"
+            className="bg-[var(--surface)] px-3 py-3 text-center"
           >
-            <p className="text-5xl sm:text-6xl font-mono font-black tracking-tight text-[var(--ink)]" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
+            <p className="text-4xl sm:text-5xl font-mono font-black tracking-tight text-[var(--ink)]" style={{ textShadow: "0 2px 4px rgba(0,0,0,0.1)" }}>
               {item.value}
             </p>
-            <p className="brutal-label mt-2">{item.label}</p>
+            <p className="brutal-label mt-1">{item.label}</p>
           </div>
         ))}
       </div>

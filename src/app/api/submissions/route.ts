@@ -20,7 +20,15 @@ export async function POST(request: Request) {
     if (!session) {
       return NextResponse.json({ error: "Sign in to submit." }, { status: 401 });
     }
-    const body = submissionSchema.parse(await request.json());
+
+    let json: unknown;
+    try {
+      json = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
+    }
+
+    const body = submissionSchema.parse(json);
     const entry = await getArenaService().submitEntry({
       ...body,
       builderId: session.userId,
@@ -28,7 +36,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(entry, { status: 201 });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to submit entry.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    if (error instanceof z.ZodError) {
+      return NextResponse.json({ error: "Invalid submission data." }, { status: 400 });
+    }
+    return NextResponse.json({ error: "Failed to submit entry." }, { status: 400 });
   }
 }

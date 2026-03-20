@@ -13,9 +13,7 @@ export async function GET(request: Request) {
 
     const leaderboard = await getVoteEngine().getLeaderboard(weekSlug);
     return NextResponse.json(leaderboard);
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to load the leaderboard.";
-    return NextResponse.json({ error: message }, { status: 400 });
+  } catch {
+    return NextResponse.json({ error: "Failed to load the leaderboard." }, { status: 500 });
   }
 }

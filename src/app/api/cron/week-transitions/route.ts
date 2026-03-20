@@ -1,11 +1,20 @@
+import { timingSafeEqual } from "node:crypto";
+
 import { NextResponse } from "next/server";
 
 import { getArenaService } from "@/lib/server/runtime";
 import { getVoteEngine } from "@/lib/server/vote-engine";
 
+function verifyBearerToken(authHeader: string | null, secret: string | undefined): boolean {
+  if (!authHeader || !secret) return false;
+  const expected = `Bearer ${secret}`;
+  if (authHeader.length !== expected.length) return false;
+  return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!verifyBearerToken(authHeader, process.env.CRON_SECRET)) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

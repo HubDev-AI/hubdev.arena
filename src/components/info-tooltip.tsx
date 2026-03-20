@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useRef, useState } from "react";
+import { type ReactNode, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 export function InfoTooltip({
@@ -14,6 +14,7 @@ export function InfoTooltip({
 }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [pos, setPos] = useState<{ top: number; left: number; above: boolean } | null>(null);
+  const tooltipId = useId();
 
   function show() {
     if (!ref.current) return;
@@ -39,11 +40,14 @@ export function InfoTooltip({
       onFocus={show}
       onBlur={hide}
       tabIndex={0}
+      aria-describedby={pos ? tooltipId : undefined}
     >
       {children}
       {pos &&
         createPortal(
           <span
+            id={tooltipId}
+            role="tooltip"
             className="info-tip-popup"
             style={{
               position: "fixed",

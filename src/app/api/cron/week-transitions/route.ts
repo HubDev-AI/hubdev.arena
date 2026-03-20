@@ -12,6 +12,9 @@ function verifyBearerToken(authHeader: string | null, secret: string | undefined
   return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
 }
 
+// Vercel Cron Jobs invoke routes via GET. This endpoint is state-mutating
+// but must remain GET for Vercel cron compatibility. Auth is handled via
+// bearer token, and CSRF is not applicable (server-to-server call).
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
   if (!verifyBearerToken(authHeader, process.env.CRON_SECRET)) {
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
       }
 
       if (week.status === "submissions_open" && new Date(week.votingOpenAt) <= now) {
-        const entries = await service.getWeekAdminDetail(week.slug);
+        const entries = await service.getWeekAdminDetail("cron@system", week.slug);
         const approvedCount = entries.entries.filter((e) => e.status === "approved").length;
         if (approvedCount >= 2) {
           await getVoteEngine().openVoting(week.slug, "cron@system");

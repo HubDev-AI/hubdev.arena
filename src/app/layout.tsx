@@ -2,10 +2,35 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { Space_Mono, Outfit, Syne } from "next/font/google";
 
+import { JsonLd } from "@/components/json-ld";
 import { SiteHeader } from "@/components/site-header";
 import { getDataMode } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
 import "./globals.css";
+
+const SITE_URL = "https://hubdev-arena.vercel.app";
+
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "HubDev Arena",
+  url: SITE_URL,
+  description:
+    "Weekly AI app building competition with head-to-head voting and live ELO leaderboard.",
+};
+
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "HubDev Arena",
+  url: SITE_URL,
+  description:
+    "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard.",
+  publisher: {
+    "@type": "Organization",
+    name: "HubDev Arena",
+  },
+};
 
 const displayFont = Syne({
   variable: "--font-display",
@@ -25,22 +50,57 @@ const monoFont = Space_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://hubdev.ai"),
-  title: "HubDev Arena",
-  description: "Weekly battles for AI-built apps.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://hubdev-arena.vercel.app"),
+  title: {
+    default: "HubDev Arena — Weekly Battles for AI-Built Apps",
+    template: "%s | HubDev Arena",
+  },
+  description:
+    "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard.",
+  keywords: [
+    "AI app competition",
+    "AI-built apps",
+    "weekly coding challenge",
+    "ELO leaderboard",
+    "head-to-head voting",
+    "AI development",
+    "app building contest",
+    "HubDev Arena",
+  ],
+  authors: [{ name: "HubDev" }],
+  creator: "HubDev",
+  publisher: "HubDev",
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   other: {
     "theme-color": "#0A0A0A",
   },
   openGraph: {
-    title: "HubDev Arena",
-    description: "Weekly battles for AI-built apps.",
-    url: "https://hubdev.ai",
+    type: "website",
+    locale: "en_US",
+    title: "HubDev Arena — Weekly Battles for AI-Built Apps",
+    description:
+      "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard.",
+    url: "https://hubdev-arena.vercel.app",
     siteName: "HubDev Arena",
   },
   twitter: {
     card: "summary_large_image",
-    title: "HubDev Arena",
-    description: "Weekly battles for AI-built apps.",
+    title: "HubDev Arena — Weekly Battles for AI-Built Apps",
+    description:
+      "Compete in weekly AI app building challenges. Submit your AI-built app, vote in head-to-head matchups, and climb the live ELO leaderboard.",
+  },
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app",
   },
 };
 
@@ -91,6 +151,8 @@ export default async function RootLayout({
             </div>
           </footer>
         </div>
+        <JsonLd data={organizationJsonLd} />
+        <JsonLd data={websiteJsonLd} />
         <Analytics />
       </body>
     </html>

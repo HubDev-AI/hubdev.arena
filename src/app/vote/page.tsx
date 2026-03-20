@@ -8,8 +8,24 @@ import { getArenaService } from "@/lib/server/runtime";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Vote — HubDev Arena",
-  description: "Pick the best AI-built app in head-to-head matchups. 10 votes per session.",
+  title: "Vote on AI-Built Apps",
+  description:
+    "Pick the best AI-built app in head-to-head matchups. Cast 10 votes per session and shape the live ELO leaderboard on HubDev Arena.",
+  alternates: {
+    canonical: "https://hubdev-arena.vercel.app/vote",
+  },
+  openGraph: {
+    title: "Vote on AI-Built Apps — HubDev Arena",
+    description:
+      "Pick the best AI-built app in head-to-head matchups. 10 votes per session shape the live ELO leaderboard.",
+    url: "https://hubdev-arena.vercel.app/vote",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Vote on AI-Built Apps — HubDev Arena",
+    description:
+      "Pick the best AI-built app in head-to-head matchups. 10 votes per session.",
+  },
 };
 
 export default async function VotePage() {
@@ -107,7 +123,7 @@ export default async function VotePage() {
           One tap per matchup. Ten picks. Live ELO updates. Signed in as {session.displayName}.
         </p>
       </div>
-      <VoteClient weekSlug={week.slug} initialLeaderboard={leaderboard} />
+      <VoteClient weekSlug={week.slug} weekId={week.id} initialLeaderboard={leaderboard} />
     </div>
     </div>
   );

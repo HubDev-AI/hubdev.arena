@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { InfoTooltip } from "@/components/info-tooltip";
+import { safeHref } from "@/lib/safe-href";
 import type { LeaderboardRow } from "@/lib/server/types";
 
 export function LeaderboardTable({
@@ -71,7 +72,7 @@ export function LeaderboardTable({
               </div>
               {!compact ? (
                 <a
-                  href={row.liveUrl}
+                  href={safeHref(row.liveUrl)}
                   target="_blank"
                   rel="noreferrer"
                   aria-label={`Open ${row.title}`}

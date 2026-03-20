@@ -47,6 +47,34 @@ async function callSec4<T>(
   return (await response.json()) as T;
 }
 
+const SHORT_WINDOW_LIMIT = 30;
+const DAILY_LIMIT = 100;
+const SHORT_WINDOW_MS = 10 * 60 * 1_000;
+const DAILY_WINDOW_MS = 24 * 60 * 60 * 1_000;
+
+function countVotesWithinWindow(voteTimestamps: string[], now: Date, windowMs: number) {
+  const cutoff = now.getTime() - windowMs;
+  return voteTimestamps.filter((ts) => new Date(ts).getTime() >= cutoff).length;
+}
+
+function assertRpcRateLimits(
+  sessionVoteTimestamps: string[],
+  fingerprintVoteTimestamps: string[],
+  now: Date,
+) {
+  const sessionShort = countVotesWithinWindow(sessionVoteTimestamps, now, SHORT_WINDOW_MS);
+  const fpShort = countVotesWithinWindow(fingerprintVoteTimestamps, now, SHORT_WINDOW_MS);
+  if (sessionShort >= SHORT_WINDOW_LIMIT || fpShort >= SHORT_WINDOW_LIMIT) {
+    throw new Error("Voting is limited to 30 votes per 10 minutes.");
+  }
+
+  const sessionDaily = countVotesWithinWindow(sessionVoteTimestamps, now, DAILY_WINDOW_MS);
+  const fpDaily = countVotesWithinWindow(fingerprintVoteTimestamps, now, DAILY_WINDOW_MS);
+  if (sessionDaily >= DAILY_LIMIT || fpDaily >= DAILY_LIMIT) {
+    throw new Error("Voting is limited to 100 votes per day.");
+  }
+}
+
 async function castVoteViaRpc(input: CastVoteInput) {
   const env = getEnv();
   if (!env.NEXT_PUBLIC_SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -89,6 +117,24 @@ async function castVoteViaRpc(input: CastVoteInput) {
     if (sessionError || !newSession) throw new Error("Failed to create voter session.");
     sessionId = newSession.id;
   }
+
+  // Rate limit check: query existing votes by session and fingerprint
+  const { data: sessionVotes } = await supabase
+    .from("votes")
+    .select("created_at")
+    .eq("voter_session_id", sessionId);
+
+  const { data: fingerprintVotes } = await supabase
+    .from("votes")
+    .select("created_at")
+    .eq("week_id", week.id)
+    .eq("fingerprint_hash", input.fingerprintHash);
+
+  assertRpcRateLimits(
+    (sessionVotes ?? []).map((v) => v.created_at),
+    (fingerprintVotes ?? []).map((v) => v.created_at),
+    new Date(),
+  );
 
   // Call the transactional PG function
   const { data, error } = await supabase.rpc("cast_vote", {

@@ -3,12 +3,24 @@ import { getAdminAllowlist, getDataMode, getEnv } from "@/lib/env";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
 import { createSupabaseArenaRepository } from "@/lib/server/supabase-arena-repository";
 
+type ArenaService = ReturnType<typeof createArenaService>;
+
+declare global {
+  var __hubdevArenaService: ArenaService | undefined;
+}
+
 export function getArenaService() {
+  if (globalThis.__hubdevArenaService) {
+    return globalThis.__hubdevArenaService;
+  }
+
   const dataMode = getDataMode();
   const adminAllowlist = getAdminAllowlist();
 
   if (dataMode === "mock") {
-    return createArenaService(getMockArenaRepository(), { adminAllowlist });
+    const service = createArenaService(getMockArenaRepository(), { adminAllowlist });
+    globalThis.__hubdevArenaService = service;
+    return service;
   }
 
   const env = getEnv();
@@ -23,5 +35,10 @@ export function getArenaService() {
     env.SUPABASE_SERVICE_ROLE_KEY,
   );
 
-  return createArenaService(repository, { adminAllowlist });
+  // Cache the Supabase service too. The Supabase repository creates a client
+  // per instantiation but is stateless otherwise, so caching the service
+  // avoids redundant client construction on every request.
+  const service = createArenaService(repository, { adminAllowlist });
+  globalThis.__hubdevArenaService = service;
+  return service;
 }

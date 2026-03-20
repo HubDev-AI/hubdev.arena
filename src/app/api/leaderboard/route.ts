@@ -7,12 +7,14 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const weekSlug = url.searchParams.get("week");
 
-    if (!weekSlug) {
-      return NextResponse.json({ error: "week is required." }, { status: 400 });
+    if (!weekSlug || !/^[a-z0-9-]{1,50}$/.test(weekSlug)) {
+      return NextResponse.json({ error: "Invalid week parameter." }, { status: 400 });
     }
 
     const leaderboard = await getVoteEngine().getLeaderboard(weekSlug);
-    return NextResponse.json(leaderboard);
+    return NextResponse.json(leaderboard, {
+      headers: { "Cache-Control": "public, max-age=10, stale-while-revalidate=30" },
+    });
   } catch {
     return NextResponse.json({ error: "Failed to load the leaderboard." }, { status: 500 });
   }

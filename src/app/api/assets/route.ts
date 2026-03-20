@@ -2,12 +2,15 @@ import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
+import { assertCsrf } from "@/lib/security/csrf";
 import { getDataMode } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
 import { buildDemoAssetObjectPath } from "@/lib/server/storage";
 import { createClient } from "@/lib/supabase/server";
 
 const ALLOWED_TYPES = new Set(["image/gif", "video/mp4"]);
+
+const ALLOWED_EXTENSIONS = new Set(["gif", "mp4"]);
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 MB
 
 function validateMagicBytes(buffer: ArrayBuffer): boolean {
@@ -20,16 +23,41 @@ function validateMagicBytes(buffer: ArrayBuffer): boolean {
 }
 
 export async function POST(request: Request) {
+  try {
+    assertCsrf(request);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const session = await getBuilderSession();
   if (!session) {
     return NextResponse.json({ error: "Sign in to upload." }, { status: 401 });
   }
 
-  const formData = await request.formData();
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength) > 50 * 1024 * 1024) {
+    return NextResponse.json({ error: "File too large." }, { status: 413 });
+  }
+
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch {
+    return NextResponse.json({ error: "Invalid form data." }, { status: 400 });
+  }
+
   const file = formData.get("file");
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "A file upload is required." }, { status: 400 });
+  }
+
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  if (!ext || !ALLOWED_EXTENSIONS.has(ext)) {
+    return NextResponse.json(
+      { error: "Only .gif and .mp4 files are allowed." },
+      { status: 400 },
+    );
   }
 
   if (!ALLOWED_TYPES.has(file.type)) {

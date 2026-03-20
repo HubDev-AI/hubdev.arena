@@ -5,6 +5,11 @@ export type MatchupCandidate = {
   exposureCount: number;
 };
 
+export type MatchupResult =
+  | { status: "found"; matchup: MatchupCandidate }
+  | { status: "all_voted" }
+  | { status: "no_matchups" };
+
 type SelectNextMatchupInput = {
   matchups: MatchupCandidate[];
   seenMatchupIds: string[];
@@ -34,14 +39,18 @@ export function selectNextMatchup({
   seenMatchupIds,
   previousEntryIds,
   random = Math.random,
-}: SelectNextMatchupInput) {
+}: SelectNextMatchupInput): MatchupResult {
+  if (matchups.length === 0) {
+    return { status: "no_matchups" };
+  }
+
   const seen = new Set(seenMatchupIds);
   const previousEntries = new Set(previousEntryIds);
 
   const eligibleMatchups = matchups.filter((matchup) => !seen.has(matchup.id));
 
   if (eligibleMatchups.length === 0) {
-    return null;
+    return { status: "all_voted" };
   }
 
   const minimumExposure = Math.min(
@@ -69,5 +78,10 @@ export function selectNextMatchup({
     Math.floor(random() * topBucket.length),
   );
 
-  return topBucket[randomIndex] ?? null;
+  const selected = topBucket[randomIndex];
+  if (!selected) {
+    return { status: "no_matchups" };
+  }
+
+  return { status: "found", matchup: selected };
 }

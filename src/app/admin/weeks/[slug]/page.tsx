@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import {
   archiveWeekAction,
   lockWeekAction,
@@ -5,8 +7,15 @@ import {
   openVotingAction,
   reviewEntryAction,
 } from "@/app/admin/actions";
+import { ConfirmForm } from "@/app/admin/weeks/[slug]/confirm-form";
 import { requireAdminSession } from "@/lib/server/auth";
+import { safeHref } from "@/lib/safe-href";
 import { getArenaService } from "@/lib/server/runtime";
+
+export const metadata: Metadata = {
+  title: "Admin: Week Detail",
+  robots: { index: false, follow: false },
+};
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +24,9 @@ export default async function AdminWeekDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  await requireAdminSession("/admin/weeks");
+  const adminSession = await requireAdminSession("/admin/weeks");
   const { slug } = await params;
-  const detail = await getArenaService().getWeekAdminDetail(slug);
+  const detail = await getArenaService().getWeekAdminDetail(adminSession.email, slug);
 
   return (
     <div className="page-bg page-bg-default">
@@ -61,7 +70,10 @@ export default async function AdminWeekDetailPage({
             ) : null}
 
             {detail.week.status === "voting_open" ? (
-              <form action={lockWeekAction}>
+              <ConfirmForm
+                action={lockWeekAction}
+                confirmMessage="Are you sure you want to lock results? This action cannot be undone."
+              >
                 <input type="hidden" name="weekSlug" value={detail.week.slug} />
                 <button
                   type="submit"
@@ -69,11 +81,14 @@ export default async function AdminWeekDetailPage({
                 >
                   Lock results
                 </button>
-              </form>
+              </ConfirmForm>
             ) : null}
 
             {detail.week.status === "locked" ? (
-              <form action={archiveWeekAction}>
+              <ConfirmForm
+                action={archiveWeekAction}
+                confirmMessage="Are you sure you want to archive this week? This action cannot be undone."
+              >
                 <input type="hidden" name="weekSlug" value={detail.week.slug} />
                 <button
                   type="submit"
@@ -81,7 +96,7 @@ export default async function AdminWeekDetailPage({
                 >
                   Archive week
                 </button>
-              </form>
+              </ConfirmForm>
             ) : null}
           </div>
         </div>
@@ -121,7 +136,7 @@ export default async function AdminWeekDetailPage({
                 </div>
                 <div className="mt-5 flex flex-wrap gap-3">
                   <a
-                    href={entry.liveUrl}
+                    href={safeHref(entry.liveUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="brutal-btn brutal-btn-outline"

@@ -5,7 +5,13 @@ import { requireBuilderSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const metadata: Metadata = {
-  title: "My Submissions — HubDev Arena",
+  title: "My Submissions",
+  description:
+    "View and manage your AI-built app submissions on HubDev Arena.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export const dynamic = "force-dynamic";
@@ -67,9 +73,9 @@ export default async function MySubmissionsPage() {
                             {entry.status}
                           </span>
                         </div>
-                        {entry.status === "rejected" && "rejectionNote" in entry && entry.rejectionNote ? (
+                        {entry.status === "rejected" && entry.rejectionNote ? (
                           <p className="mt-3 pl-3 text-sm text-red-700">
-                            {entry.rejectionNote as string}
+                            {entry.rejectionNote}
                           </p>
                         ) : null}
                       </div>

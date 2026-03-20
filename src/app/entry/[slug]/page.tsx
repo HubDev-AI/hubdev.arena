@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 
 import { EntryMedia } from "@/components/entry-media";
 import { InfoTooltip } from "@/components/info-tooltip";
+import { JsonLd } from "@/components/json-ld";
+import { safeHref } from "@/lib/safe-href";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const dynamic = "force-dynamic";
@@ -16,14 +18,30 @@ export async function generateMetadata({
   const { slug } = await params;
   const detail = await getArenaService().getEntryDetail(slug);
   if (!detail) {
-    return { title: "Entry not found — HubDev Arena" };
+    return { title: "Entry Not Found" };
   }
+  const title = `${detail.entry.title} by ${detail.builder.displayName}`;
+  const description =
+    detail.entry.oneLiner ||
+    `${detail.entry.title} -- an AI-built app competing in HubDev Arena.`;
+  const url = `https://hubdev-arena.vercel.app/entry/${slug}`;
+
   return {
-    title: `${detail.entry.title} by ${detail.builder.displayName} — HubDev Arena`,
-    description: detail.entry.oneLiner,
+    title,
+    description,
+    alternates: {
+      canonical: url,
+    },
     openGraph: {
       title: `${detail.entry.title} — HubDev Arena`,
-      description: detail.entry.oneLiner,
+      description,
+      url,
+      type: "article",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${detail.entry.title} — HubDev Arena`,
+      description,
     },
   };
 }
@@ -43,8 +61,48 @@ export default async function EntryDetailPage({
   const totalMatches = detail.entry.wins + detail.entry.losses;
   const winRate = totalMatches > 0 ? Math.round((detail.entry.wins / totalMatches) * 100) : 0;
 
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "HubDev Arena",
+        item: "https://hubdev-arena.vercel.app",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Leaderboard",
+        item: "https://hubdev-arena.vercel.app/leaderboard",
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: detail.entry.title,
+        item: `https://hubdev-arena.vercel.app/entry/${slug}`,
+      },
+    ],
+  };
+
+  const entryJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: detail.entry.title,
+    description: detail.entry.oneLiner,
+    author: {
+      "@type": "Person",
+      name: detail.builder.displayName,
+    },
+    url: detail.entry.liveUrl,
+    applicationCategory: "WebApplication",
+  };
+
   return (
     <div className="page-bg page-bg-default">
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={entryJsonLd} />
       <div className="mx-auto grid w-full max-w-5xl gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:px-8">
         <Link href="/leaderboard" className="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-widest text-[var(--muted)] transition hover:text-[var(--ink)] lg:col-span-2">&larr; Back to leaderboard</Link>
         <div className="space-y-6">
@@ -113,7 +171,7 @@ export default async function EntryDetailPage({
             </div>
             <div className="flex flex-wrap gap-3 p-5">
               <a
-                href={detail.entry.liveUrl}
+                href={safeHref(detail.entry.liveUrl)}
                 target="_blank"
                 rel="noreferrer"
                 className="brutal-btn brutal-btn-dark flex-1"

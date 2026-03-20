@@ -1,6 +1,7 @@
 import type {
   ArenaRepository,
   ArenaState,
+  Entry,
 } from "@/lib/server/types";
 
 function clone<T>(value: T): T {
@@ -66,8 +67,8 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
       return clone(state.entries.filter((entry) => entry.builderId === builderId));
     },
     async listEntriesByIds(entryIds) {
-      const lookup = new Set(entryIds);
-      return clone(state.entries.filter((entry) => lookup.has(entry.id)));
+      const byId = new Map(state.entries.map((e) => [e.id, e]));
+      return clone(entryIds.map((id) => byId.get(id)).filter((e): e is Entry => e != null));
     },
     async getEntryById(entryId) {
       return clone(state.entries.find((entry) => entry.id === entryId) ?? null);
@@ -106,7 +107,9 @@ export function createInMemoryArenaRepository(initialState: ArenaState): InMemor
     },
     async listVotesBySession(voterSessionId) {
       return clone(
-        state.votes.filter((vote) => vote.voterSessionId === voterSessionId),
+        state.votes
+          .filter((vote) => vote.voterSessionId === voterSessionId)
+          .sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
       );
     },
     async listVotesByFingerprint(weekId, fingerprintHash) {

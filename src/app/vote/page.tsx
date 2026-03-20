@@ -38,10 +38,18 @@ export default async function VotePage() {
   const service = getArenaService();
   const week = await service.getCurrentWeek();
 
-  if (!week) {
+  if (!week || week.status !== "voting_open") {
     return (
       <div className="mx-auto max-w-5xl px-4 py-20 sm:px-6 lg:px-8">
-        <p className="text-lg text-[var(--muted)]">No active week is available for voting.</p>
+        <div className="brutal-card p-8">
+          <p className="brutal-label">Voting</p>
+          <p className="mt-2 text-xl font-bold text-[var(--ink)]">
+            No active voting round right now. Check back when a week opens for voting.
+          </p>
+          <div className="mt-4">
+            <Link href="/leaderboard" className="brutal-btn brutal-btn-outline">View leaderboard</Link>
+          </div>
+        </div>
       </div>
     );
   }

@@ -86,10 +86,10 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
     <form
       ref={formRef}
       action={handleSubmit}
-      className="brutal-card overflow-hidden p-0"
+      className="brutal-card overflow-hidden p-0 neon-box"
     >
-      <div className="bg-[var(--ink)] px-6 py-4">
-        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">
+      <div className="bg-black/40 px-6 py-4 flow-border-bottom">
+        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)] neon-text">
           Entry details
         </p>
       </div>
@@ -97,7 +97,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
             <span className="brutal-label text-[var(--accent-green)]">Title</span>
-            <span className={`font-mono text-[10px] ${titleLen >= 48 ? "text-red-700" : "text-[var(--muted)]"}`}>
+            <span className={`font-mono text-[10px] ${titleLen >= 48 ? "text-red-400" : "text-[var(--muted)]"}`}>
               {titleLen}/60
             </span>
           </div>
@@ -113,7 +113,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         <label className="space-y-2 md:col-span-2">
           <div className="flex items-center justify-between">
             <span className="brutal-label text-[var(--accent-green)]">One-liner</span>
-            <span className={`font-mono text-[10px] ${oneLinerLen >= 112 ? "text-red-700" : "text-[var(--muted)]"}`}>
+            <span className={`font-mono text-[10px] ${oneLinerLen >= 112 ? "text-red-400" : "text-[var(--muted)]"}`}>
               {oneLinerLen}/140
             </span>
           </div>
@@ -146,16 +146,16 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             name="demoAsset"
             type="file"
             accept="image/gif,video/mp4"
-            className="brutal-input text-sm file:mr-4 file:border-[2px] file:border-[var(--ink)] file:bg-[var(--ink)] file:px-3 file:py-2 file:font-mono file:text-xs file:font-bold file:uppercase file:tracking-wider file:text-[var(--surface)] file:cursor-pointer hover:file:bg-[var(--accent-green)] hover:file:text-[var(--ink)]"
+            className="brutal-input text-sm file:mr-4 file:border file:border-[var(--accent-green)]/30 file:bg-[var(--accent-green)]/10 file:px-3 file:py-2 file:font-mono file:text-xs file:font-bold file:uppercase file:tracking-wider file:text-[var(--accent-green)] file:cursor-pointer file:transition-all hover:file:bg-[var(--accent-green)] hover:file:text-black hover:file:shadow-[0_0_10px_rgba(0,255,65,0.2)]"
           />
         </label>
       </div>
 
-      <div className="border-t-[2px] border-[var(--ink)] px-6 py-4">
+      <div className="border-t-[2px] border-[var(--line)] px-6 py-4">
         <button
           type="submit"
           disabled={isSubmitting}
-          className="brutal-btn brutal-btn-green disabled:opacity-50"
+          className="brutal-btn brutal-btn-green disabled:opacity-50 hover-lift"
         >
           {isUploading
             ? "Uploading asset..."
@@ -166,15 +166,15 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
       </div>
 
       {status ? (
-        <div className="border-t-[2px] border-[var(--accent-green)] bg-green-50 px-6 py-4">
-          <p className="font-mono text-sm font-bold text-green-800">
+        <div className="border-t-[2px] border-[var(--accent-green)] bg-green-900/20 px-6 py-4">
+          <p className="font-mono text-sm font-bold text-green-400">
             {status}
           </p>
         </div>
       ) : null}
       {error ? (
-        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-50 px-6 py-4">
-          <p className="font-mono text-sm font-bold text-red-700">
+        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-900/20 px-6 py-4">
+          <p className="font-mono text-sm font-bold text-red-400">
             {error}
           </p>
         </div>

@@ -2,7 +2,12 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/react";
 import { Space_Mono, Outfit, Syne } from "next/font/google";
 
+import { BackToTop } from "@/components/back-to-top";
+import { CursorGlow } from "@/components/cursor-glow";
+import { FilmGrain } from "@/components/film-grain";
+import { GridBg } from "@/components/grid-bg";
 import { JsonLd } from "@/components/json-ld";
+import { ScrollProgress } from "@/components/scroll-progress";
 import { SiteHeader } from "@/components/site-header";
 import { getDataMode } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
@@ -117,6 +122,11 @@ export default async function RootLayout({
       <body
         className={`${displayFont.variable} ${bodyFont.variable} ${monoFont.variable} antialiased`}
       >
+        <GridBg />
+        <FilmGrain />
+        <ScrollProgress />
+        <CursorGlow />
+        <BackToTop />
         <div className="relative z-10 flex min-h-screen flex-col">
           <a
             href="#main-content"
@@ -126,12 +136,15 @@ export default async function RootLayout({
           </a>
           <SiteHeader session={session} dataMode={dataMode} />
           <main id="main-content" className="flex-1">{children}</main>
-          <footer className="border-t-[3px] border-[var(--ink)] bg-[var(--ink)] py-8">
-            <div className="h-[2px] w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" />
+          <footer className="relative border-t border-[var(--line)] bg-[#080A10] py-8 overflow-hidden">
+            {/* Ambient glow */}
+            <div className="pointer-events-none absolute -bottom-20 left-1/4 h-40 w-60 rounded-full bg-[var(--accent-green)] opacity-[0.04] blur-3xl" />
+            <div className="pointer-events-none absolute -bottom-20 right-1/4 h-40 w-60 rounded-full bg-[var(--accent-blue)] opacity-[0.04] blur-3xl" />
+            <div className="h-[2px] w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-blue)] to-transparent" style={{ backgroundSize: "200% 100%", animation: "border-flow 4s ease infinite" }} />
             <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 pt-6 sm:px-6 lg:px-8">
               <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center border-[2px] border-gray-700 bg-gray-900 font-mono text-[10px] font-bold text-[var(--accent-green)]">
+                  <div className="flex h-8 w-8 items-center justify-center border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 font-mono text-[10px] font-bold text-[var(--accent-green)] transition-all hover:bg-[var(--accent-green)] hover:text-black" style={{ boxShadow: "0 0 10px rgba(0, 255, 65, 0.15)" }}>
                     HA
                   </div>
                   <p className="font-mono text-[10px] uppercase tracking-[0.3em] text-gray-500">
@@ -139,15 +152,21 @@ export default async function RootLayout({
                   </p>
                 </div>
                 <nav aria-label="Footer navigation" className="flex items-center gap-5">
-                  <a href="/vote" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Vote</a>
-                  <a href="/leaderboard" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Board</a>
-                  <a href="/rules" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Rules</a>
-                  <a href="/submit" className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Submit</a>
+                  <a href="/vote" className="animated-underline font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Vote</a>
+                  <a href="/leaderboard" className="animated-underline font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Board</a>
+                  <a href="/rules" className="animated-underline font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Rules</a>
+                  <a href="/submit" className="animated-underline font-mono text-[10px] uppercase tracking-[0.2em] text-gray-500 transition hover:text-[var(--accent-green)]">Submit</a>
                 </nav>
               </div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">
-                Weekly battles for AI-built apps
-              </p>
+              <div className="data-stream-divider mt-4" />
+              <div className="mt-4 flex items-center justify-between">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-gray-600">
+                  Weekly battles for AI-built apps
+                </p>
+                <p className="font-mono text-[9px] text-gray-700">
+                  v2.0 — Cyberpunk Edition
+                </p>
+              </div>
             </div>
           </footer>
         </div>

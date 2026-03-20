@@ -49,13 +49,13 @@ export function MockLoginPanel({
           type="button"
           onClick={() => handleLogin(builder.id)}
           disabled={pendingId !== null}
-          className="brutal-card flex w-full items-center justify-between px-5 py-4 text-left disabled:opacity-60"
+          className="brutal-card flex w-full items-center justify-between px-5 py-4 text-left disabled:opacity-60 hover-lift inner-glow"
         >
           <div>
-            <p className="text-lg font-black tracking-[-0.04em] text-[var(--ink)]">
+            <p className="text-lg font-black tracking-[-0.04em] text-[var(--text-primary)]">
               {builder.displayName}
             </p>
-            <p className="mt-1 text-sm text-[var(--muted)]">{builder.email}</p>
+            <p className="mt-1 text-sm text-[var(--text-secondary)]">{builder.email}</p>
           </div>
           <span className="brutal-badge brutal-badge-green">
             {builder.isAdmin ? "Admin" : "Member"}

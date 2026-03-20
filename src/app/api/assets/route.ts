@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { NextResponse } from "next/server";
 
-import { getDataMode, getEnv } from "@/lib/env";
+import { getDataMode } from "@/lib/env";
 import { getBuilderSession } from "@/lib/server/auth";
 import { buildDemoAssetObjectPath } from "@/lib/server/storage";
 import { createClient } from "@/lib/supabase/server";

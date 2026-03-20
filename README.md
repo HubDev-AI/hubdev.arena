@@ -7,44 +7,66 @@ HubDev Arena is a weekly challenge platform for AI-built apps. Builders submit o
 - Next.js App Router + TypeScript + Tailwind CSS
 - Supabase for auth, Postgres, storage, and SQL functions
 - Vercel for hosting and analytics
-- Optional sec4 internal vote engine boundary for vote serving, vote writes, and leaderboard reads
 
-## Local development
+## Prerequisites
 
-Install dependencies and start the app:
+- [Bun](https://bun.sh) (v1.2+)
+- [Docker](https://docs.docker.com/get-docker/) (for Supabase local stack)
+- [Supabase CLI](https://supabase.com/docs/guides/cli/getting-started) (v2.70+)
 
-```bash
-npm install
-npm run dev
-```
-
-To use the local mock runtime:
+## Getting started
 
 ```bash
-HUBDEV_DATA_MODE=mock npm run dev
+make setup     # install deps + create .env.local from example
+make start     # start Supabase local stack (Postgres, Auth, Storage, Studio)
+make db-reset  # apply migrations + seed data
+make dev       # start Next.js dev server at http://localhost:3000
 ```
 
-Open `http://localhost:3000`.
+Supabase Studio is available at `http://localhost:54323` after `make start`.
 
 ## Environment variables
 
-- `HUBDEV_DATA_MODE`
-- `HUBDEV_COOKIE_SECRET`
-- `HUBDEV_FINGERPRINT_SECRET`
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `SEC4_INTERNAL_BASE_URL`
-- `SEC4_INTERNAL_TOKEN`
-- `ADMIN_ALLOWLIST`
+Copy `.env.local.example` to `.env.local` (done automatically by `make setup`):
+
+| Variable | Description | Local default |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase API URL | `http://127.0.0.1:54321` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon key | Local demo key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key | Local demo key |
+| `NEXT_PUBLIC_SITE_URL` | App URL | `http://localhost:3000` |
+| `HUBDEV_DATA_MODE` | `mock` or `supabase` | `supabase` |
+| `HUBDEV_COOKIE_SECRET` | Cookie signing secret | Local placeholder |
+| `HUBDEV_FINGERPRINT_SECRET` | Fingerprint hashing secret | Local placeholder |
+| `ADMIN_ALLOWLIST` | Comma-separated admin emails | `admin@example.com` |
+| `SEC4_INTERNAL_BASE_URL` | Optional sec4 vote engine URL | — |
+| `SEC4_INTERNAL_TOKEN` | Optional sec4 auth token | — |
+
+## Make targets
+
+```
+make help        Show available targets
+make setup       Install deps + create .env.local from example
+make start       Start Supabase local stack
+make stop        Stop Supabase local stack
+make dev         Start Next.js dev server
+make db-reset    Reset DB: apply migrations + seed data
+make test        Run unit + integration tests
+make test-watch  Run tests in watch mode
+make test-e2e    Run Playwright E2E tests
+make lint        Run ESLint
+make typecheck   Run TypeScript type checking
+make build       Production build
+make clean       Stop Supabase and remove build artifacts
+```
 
 ## Verification
 
 ```bash
-npm test
-npm run typecheck
-npm run lint
-npm run build
+make test        # unit + integration tests
+make typecheck   # TypeScript
+make lint        # ESLint
+make build       # production build
 ```
 
 ## Domain

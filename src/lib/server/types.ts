@@ -41,6 +41,7 @@ export type Entry = {
   wins: number;
   losses: number;
   appearanceCount: number;
+  rejectionNote: string | null;
   submittedAt: string;
   approvedAt: string | null;
 };
@@ -58,6 +59,7 @@ export type Matchup = {
 export type VoterSession = {
   id: string;
   weekId: string;
+  userId: string | null;
   cookieId: string;
   fingerprintHash: string;
   votesCast: number;
@@ -119,13 +121,16 @@ export type ArenaState = {
 
 export interface ArenaRepository {
   listProfiles(): Promise<Profile[]>;
+  listProfilesByIds(profileIds: string[]): Promise<Profile[]>;
   getProfileById(profileId: string): Promise<Profile | null>;
   saveProfile(profile: Profile): Promise<Profile>;
   listWeeks(): Promise<Week[]>;
+  getWeekById(weekId: string): Promise<Week | null>;
   getWeekBySlug(slug: string): Promise<Week | null>;
   saveWeek(week: Week): Promise<Week>;
   listEntriesByWeek(weekId: string): Promise<Entry[]>;
   listEntriesByBuilder(weekId: string, builderId: string): Promise<Entry[]>;
+  listAllEntriesByBuilder(builderId: string): Promise<Entry[]>;
   listEntriesByIds(entryIds: string[]): Promise<Entry[]>;
   getEntryById(entryId: string): Promise<Entry | null>;
   getEntryBySlug(entrySlug: string): Promise<Entry | null>;

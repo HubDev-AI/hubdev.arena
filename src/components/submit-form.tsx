@@ -1,12 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 export function SubmitForm({ weekSlug }: { weekSlug: string }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [titleLen, setTitleLen] = useState(0);
+  const [oneLinerLen, setOneLinerLen] = useState(0);
 
   async function handleSubmit(formData: FormData) {
     setIsSubmitting(true);
@@ -57,6 +60,7 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
       }
 
       setStatus("Submission received. It is now waiting for manual approval.");
+      formRef.current?.reset();
     } catch (caughtError) {
       const message =
         caughtError instanceof Error ? caughtError.message : "Something went wrong.";
@@ -69,27 +73,47 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
 
   return (
     <form
+      ref={formRef}
       action={handleSubmit}
-      className="brutal-card space-y-5 p-6"
+      className="brutal-card overflow-hidden p-0"
     >
-      <div className="grid gap-5 md:grid-cols-2">
+      <div className="bg-[var(--ink)] px-6 py-4">
+        <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">
+          Entry details
+        </p>
+      </div>
+      <div className="grid gap-5 p-6 md:grid-cols-2">
         <label className="space-y-2 md:col-span-2">
-          <span className="brutal-label">Title</span>
+          <div className="flex items-center justify-between">
+            <span className="brutal-label">Title</span>
+            <span className={`font-mono text-[10px] ${titleLen > 50 ? "text-red-700" : "text-[var(--muted)]"}`}>
+              {titleLen}/60
+            </span>
+          </div>
           <input
             required
             name="title"
+            maxLength={60}
             className="brutal-input"
-            placeholder="Prompt Forge"
+            placeholder="Your app name"
+            onChange={(e) => setTitleLen(e.target.value.length)}
           />
         </label>
         <label className="space-y-2 md:col-span-2">
-          <span className="brutal-label">One-liner</span>
+          <div className="flex items-center justify-between">
+            <span className="brutal-label">One-liner</span>
+            <span className={`font-mono text-[10px] ${oneLinerLen > 120 ? "text-red-700" : "text-[var(--muted)]"}`}>
+              {oneLinerLen}/140
+            </span>
+          </div>
           <textarea
             required
             name="oneLiner"
             rows={3}
+            maxLength={140}
             className="brutal-input"
-            placeholder="Stress-test prompts against real user friction before launch."
+            placeholder="What does your app do in one sentence?"
+            onChange={(e) => setOneLinerLen(e.target.value.length)}
           />
         </label>
         <label className="space-y-2">
@@ -99,11 +123,11 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
             name="liveUrl"
             type="url"
             className="brutal-input"
-            placeholder="https://yourapp.example.com"
+            placeholder="https://your-app.com"
           />
         </label>
         <label className="space-y-2">
-          <span className="brutal-label">Demo asset</span>
+          <span className="brutal-label">Demo asset (GIF or MP4)</span>
           <input
             required
             name="demoAsset"
@@ -114,27 +138,33 @@ export function SubmitForm({ weekSlug }: { weekSlug: string }) {
         </label>
       </div>
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="brutal-btn brutal-btn-green disabled:opacity-50"
-      >
-        {isUploading
-          ? "Uploading asset..."
-          : isSubmitting
-            ? "Submitting..."
-            : "Submit entry"}
-      </button>
+      <div className="border-t-[2px] border-[var(--ink)] px-6 py-4">
+        <button
+          type="submit"
+          disabled={isSubmitting}
+          className="brutal-btn brutal-btn-green disabled:opacity-50"
+        >
+          {isUploading
+            ? "Uploading asset..."
+            : isSubmitting
+              ? "Submitting..."
+              : "Submit entry"}
+        </button>
+      </div>
 
       {status ? (
-        <p className="border-[2px] border-[var(--accent-blue)] bg-blue-50 px-4 py-3 font-mono text-sm font-bold text-[var(--accent-blue)]">
-          {status}
-        </p>
+        <div className="border-t-[2px] border-[var(--accent-green)] bg-green-50 px-6 py-4">
+          <p className="font-mono text-sm font-bold text-green-800">
+            {status}
+          </p>
+        </div>
       ) : null}
       {error ? (
-        <p className="border-[2px] border-[var(--accent-red)] bg-red-50 px-4 py-3 font-mono text-sm font-bold text-[var(--accent-red)]">
-          {error}
-        </p>
+        <div className="border-t-[2px] border-[var(--accent-red)] bg-red-50 px-6 py-4">
+          <p className="font-mono text-sm font-bold text-red-700">
+            {error}
+          </p>
+        </div>
       ) : null}
     </form>
   );

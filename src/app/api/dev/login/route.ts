@@ -6,8 +6,8 @@ import { BUILDER_COOKIE_NAME } from "@/lib/server/auth";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
 
 export async function POST(request: Request) {
-  if (getDataMode() !== "mock") {
-    return NextResponse.json({ error: "Mock login is disabled." }, { status: 404 });
+  if ((process.env.NODE_ENV as string) === "production" || getDataMode() !== "mock") {
+    return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   const body = (await request.json()) as { profileId?: string };
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
     name: BUILDER_COOKIE_NAME,
     value: signValue(profile.id, getEnv().HUBDEV_COOKIE_SECRET),
     httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
     path: "/",
   });

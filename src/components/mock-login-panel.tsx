@@ -49,7 +49,7 @@ export function MockLoginPanel({
           type="button"
           onClick={() => handleLogin(builder.id)}
           disabled={pendingId !== null}
-          className="flex w-full items-center justify-between rounded-[1.6rem] border border-[var(--line)] bg-white/85 px-5 py-4 text-left transition hover:-translate-y-0.5 hover:border-[var(--ink)] hover:shadow-[0_18px_40px_rgba(8,18,30,0.08)] disabled:opacity-60"
+          className="brutal-card flex w-full items-center justify-between px-5 py-4 text-left disabled:opacity-60"
         >
           <div>
             <p className="text-lg font-black tracking-[-0.04em] text-[var(--ink)]">
@@ -57,7 +57,7 @@ export function MockLoginPanel({
             </p>
             <p className="mt-1 text-sm text-[var(--muted)]">{builder.email}</p>
           </div>
-          <span className="rounded-full bg-[var(--ink)] px-3 py-2 font-mono text-[10px] uppercase tracking-[0.28em] text-[var(--paper)]">
+          <span className="brutal-badge brutal-badge-green">
             {builder.isAdmin ? "Admin" : "Member"}
           </span>
         </button>

@@ -35,6 +35,7 @@ type ReviewEntryInput = {
   adminEmail: string;
   entryId: string;
   decision: "approved" | "rejected";
+  rejectionNote?: string;
 };
 
 type OpenVotingInput = {
@@ -253,6 +254,7 @@ export function createArenaService(
         wins: 0,
         losses: 0,
         appearanceCount: 0,
+        rejectionNote: null,
         submittedAt: currentTime,
         approvedAt: null,
       };
@@ -320,7 +322,7 @@ export function createArenaService(
       return repository.saveWeek(week);
     },
 
-    async reviewEntry({ adminEmail, entryId, decision }: ReviewEntryInput) {
+    async reviewEntry({ adminEmail, entryId, decision, rejectionNote }: ReviewEntryInput) {
       await assertAdmin(adminEmail);
 
       const currentTime = now().toISOString();
@@ -343,6 +345,7 @@ export function createArenaService(
 
       entry.status = decision;
       entry.approvedAt = decision === "approved" ? currentTime : null;
+      entry.rejectionNote = decision === "rejected" ? (rejectionNote ?? null) : null;
       return repository.saveEntry(entry);
     },
 
@@ -422,6 +425,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId,
           fingerprintHash,
           votesCast: 0,
@@ -444,8 +448,8 @@ export function createArenaService(
           sessionVotes.length === 0
             ? []
             : [
-                sessionVotes[sessionVotes.length - 1].winnerEntryId,
-                sessionVotes[sessionVotes.length - 1].loserEntryId,
+                sessionVotes[sessionVotes.length - 1]!.winnerEntryId,
+                sessionVotes[sessionVotes.length - 1]!.loserEntryId,
               ],
         random,
       });
@@ -518,6 +522,7 @@ export function createArenaService(
         voterSession = {
           id: randomUUID(),
           weekId: week.id,
+          userId: null,
           cookieId: input.cookieId,
           fingerprintHash: input.fingerprintHash,
           votesCast: 0,
@@ -607,7 +612,8 @@ export function createArenaService(
       const approvedEntries = (await repository.listEntriesByWeek(week.id)).filter(
         (entry) => entry.status === "approved",
       );
-      const profiles = await repository.listProfiles();
+      const builderIds = [...new Set(approvedEntries.map((e) => e.builderId))];
+      const profiles = await repository.listProfilesByIds(builderIds);
       const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
 
       return sortLeaderboardEntries(approvedEntries).map((entry, index) => {
@@ -634,13 +640,11 @@ export function createArenaService(
 
     async getEntryDetail(entrySlug: string) {
       const entry = await repository.getEntryBySlug(entrySlug);
-      if (!entry) {
+      if (!entry || entry.status !== "approved") {
         return null;
       }
 
-      const week = (await repository.listWeeks()).find(
-        (candidate) => candidate.id === entry.weekId,
-      );
+      const week = await repository.getWeekById(entry.weekId);
       ensure(week, `Week ${entry.weekId} was not found.`);
       const builder = await loadProfile(entry.builderId);
 
@@ -652,15 +656,23 @@ export function createArenaService(
     },
 
     async getMySubmissions(builderId: string) {
-      const weeks = await repository.listWeeks();
-      const entries = await Promise.all(
-        weeks.map(async (week) => ({
-          week,
-          entries: await repository.listEntriesByBuilder(week.id, builderId),
-        })),
-      );
+      const allEntries = await repository.listAllEntriesByBuilder(builderId);
+      if (allEntries.length === 0) return [];
 
-      return entries.filter((group) => group.entries.length > 0);
+      const weekIds = [...new Set(allEntries.map((e) => e.weekId))];
+      const weeks = await repository.listWeeks();
+      const weeksById = new Map(weeks.map((w) => [w.id, w]));
+
+      return weekIds
+        .map((weekId) => {
+          const week = weeksById.get(weekId);
+          if (!week) return null;
+          return {
+            week,
+            entries: allEntries.filter((e) => e.weekId === weekId),
+          };
+        })
+        .filter((group): group is NonNullable<typeof group> => group !== null && group.entries.length > 0);
     },
 
     async listPastWinners(limit = 3) {
@@ -668,14 +680,41 @@ export function createArenaService(
         ["locked", "archived"].includes(week.status),
       );
 
-      const winners = await Promise.all(
-        weeks.map(async (week) => ({
-          week,
-          topEntry: (await this.getLeaderboard({ weekSlug: week.slug }))[0] ?? null,
-        })),
+      const pastWeeks = weeks.slice(0, limit);
+      const allEntries = await Promise.all(
+        pastWeeks.map((week) => repository.listEntriesByWeek(week.id)),
       );
 
-      return winners.filter((week) => week.topEntry).slice(0, limit);
+      const topEntries = allEntries.map((entries) => {
+        const approved = entries.filter((e) => e.status === "approved");
+        return sortLeaderboardEntries(approved)[0] ?? null;
+      });
+
+      const builderIds = [...new Set(topEntries.filter(Boolean).map((e) => e!.builderId))];
+      const profiles = await repository.listProfilesByIds(builderIds);
+      const profilesById = new Map(profiles.map((p) => [p.id, p]));
+
+      return pastWeeks
+        .map((week, index) => {
+          const entry = topEntries[index];
+          if (!entry) return null;
+          const builder = profilesById.get(entry.builderId);
+          return {
+            week,
+            topEntry: {
+              rank: 1,
+              entrySlug: entry.slug,
+              title: entry.title,
+              builderName: builder?.displayName ?? "Unknown",
+              liveUrl: entry.liveUrl,
+              demoAssetUrl: entry.demoAssetPath,
+              elo: entry.eloRating,
+              wins: entry.wins,
+              losses: entry.losses,
+            } satisfies LeaderboardRow,
+          };
+        })
+        .filter((w): w is NonNullable<typeof w> => w !== null);
     },
   };
 }

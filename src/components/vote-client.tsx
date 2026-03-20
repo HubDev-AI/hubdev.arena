@@ -191,7 +191,7 @@ export function VoteClient({
             <button
               type="button"
               onClick={() => { setIsFinished(false); setVotesCompleted(0); void loadNextMatchup(); }}
-              className="brutal-btn bg-white text-[var(--ink)]"
+              className="brutal-btn brutal-btn-outline"
             >
               Vote 10 more
             </button>
@@ -250,7 +250,7 @@ export function VoteClient({
       {isLoading ? (
         <div className="vote-grid">
           {[0, 1].map((i) => (
-            <div key={i} className="brutal-card overflow-hidden">
+            <div key={i} className={`brutal-card overflow-hidden ${i === 0 ? "border-t-[3px] border-t-[var(--accent-green)]" : "border-t-[3px] border-t-[var(--accent-blue)]"}`}>
               <div className="h-56 animate-pulse bg-[var(--ink)]/10 sm:h-72" />
               <div className="space-y-4 border-t-[3px] border-[var(--ink)] p-5">
                 <div className="h-4 w-24 animate-pulse bg-[var(--ink)]/10" />
@@ -268,8 +268,7 @@ export function VoteClient({
             const otherEntry = index === 0 ? matchup.rightEntry : matchup.leftEntry;
             const isLeft = index === 0;
             return (
-              <article key={entry.id} className={`brutal-card overflow-hidden ${isLeft ? "vote-enter-left" : "vote-enter-right"}`}>
-                <div className={`h-1.5 w-full ${isLeft ? "bg-[var(--accent-green)]" : "bg-[var(--accent-blue)]"}`} />
+              <article key={entry.id} className={`brutal-card overflow-hidden ${isLeft ? "vote-enter-left border-t-[3px] border-t-[var(--accent-green)]" : "vote-enter-right border-t-[3px] border-t-[var(--accent-blue)]"}`}>
                 <div className="img-zoom">
                   <EntryMedia assetPath={entry.demoAssetPath} title={entry.title} className="h-56 sm:h-72" />
                 </div>

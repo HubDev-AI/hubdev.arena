@@ -69,9 +69,8 @@ const faqJsonLd = {
 export default async function Home() {
   let week;
   let session;
-  let service;
   try {
-    service = getArenaService();
+    const service = getArenaService();
     session = await getBuilderSession();
     week = await service.getCurrentWeek();
   } catch {
@@ -98,6 +97,7 @@ export default async function Home() {
     );
   }
 
+  const service = getArenaService();
   const leaderboard = await service.getLeaderboard({ weekSlug: week.slug });
   const featuredEntries = leaderboard.slice(0, 3);
   const pastWinners = await service.listPastWinners(2);
@@ -133,7 +133,7 @@ export default async function Home() {
               <Link href="/vote" className="brutal-btn brutal-btn-green">
                 Start Voting
               </Link>
-              <Link href="/submit" className="brutal-btn" style={{ background: "#FFFFFF", color: "#0A0A0A" }}>
+              <Link href="/submit" className="brutal-btn brutal-btn-outline">
                 {session ? "Submit your build" : "Sign in"}
               </Link>
             </div>
@@ -270,7 +270,7 @@ export default async function Home() {
                   #{idx + 1}
                 </div>
               </div>
-              {/* Dark info bar: title + author */}
+              {/* Dark info bar: title + author + record */}
               <div className="border-t-[3px] border-[var(--ink)] bg-[var(--ink)] px-4 py-3">
                 <Link
                   href={`/entry/${entry.entrySlug}`}
@@ -278,24 +278,23 @@ export default async function Home() {
                 >
                   {entry.title}
                 </Link>
-                <p className="mt-0.5 text-xs text-gray-400">by {entry.builderName}</p>
-              </div>
-              {/* Stats + actions */}
-              <div className="flex items-center justify-between gap-3 border-t-[2px] border-[var(--ink)] px-4 py-3">
-                <div className="flex items-center gap-3">
-                  <InfoTooltip tip="ELO rating from head-to-head votes. Starts at 1200; wins against higher-rated entries earn more points.">
-                    <span className="brutal-badge brutal-badge-green">
-                      ELO {entry.elo}
-                    </span>
-                  </InfoTooltip>
-                  <InfoTooltip tip="Win/Loss record from head-to-head matchups.">
-                    <span className="font-mono text-xs font-bold text-[var(--muted)] whitespace-nowrap">
-                      <span className="text-emerald-700">{entry.wins}W</span>
-                      {" / "}
-                      <span className="text-red-700">{entry.losses}L</span>
-                    </span>
-                  </InfoTooltip>
+                <div className="mt-0.5 flex items-center gap-2 text-xs text-gray-400">
+                  <span>by {entry.builderName}</span>
+                  <span className="text-gray-600">&middot;</span>
+                  <span className="font-mono font-bold whitespace-nowrap">
+                    <span className="text-[var(--accent-green)]">{entry.wins}W</span>
+                    {" / "}
+                    <span className="text-red-400">{entry.losses}L</span>
+                  </span>
                 </div>
+              </div>
+              {/* ELO + actions */}
+              <div className="flex items-center justify-between gap-2 border-t-[2px] border-[var(--ink)] px-4 py-3">
+                <InfoTooltip tip="ELO rating from head-to-head votes. Starts at 1200; wins against higher-rated entries earn more points.">
+                  <span className="brutal-badge brutal-badge-green">
+                    ELO {entry.elo}
+                  </span>
+                </InfoTooltip>
                 <div className="flex gap-2">
                   <a
                     href={safeHref(entry.liveUrl)}
@@ -380,7 +379,7 @@ export default async function Home() {
               Frequently asked
             </p>
           </div>
-          <div className="grid gap-0 divide-y-[2px] divide-[var(--ink)] sm:grid-cols-2 sm:divide-x-[2px] sm:divide-y-0">
+          <div className="grid gap-0 divide-y-[2px] divide-[var(--ink)] sm:grid-cols-2 sm:divide-x-[2px]">
             {[
               { q: "What counts as an AI-built app?", a: "Any application where AI tools were used significantly in the development process — code generation, design, debugging, or any creative workflow." },
               { q: "How are matchups selected?", a: "Matchups are randomized. You'll see two entries side by side and pick the one you think is better. Each voting session includes 10 matchups." },
@@ -411,7 +410,7 @@ export default async function Home() {
             <Link href="/vote" className="brutal-btn brutal-btn-green shrink-0">
               Start voting
             </Link>
-            <Link href="/submit" className="brutal-btn bg-white text-[var(--ink)] shrink-0">
+            <Link href="/submit" className="brutal-btn brutal-btn-outline shrink-0">
               Submit entry
             </Link>
           </div>

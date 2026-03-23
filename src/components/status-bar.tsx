@@ -7,9 +7,11 @@ const BAR_COUNT = 20;
 export function StatusBar({
   className = "",
   frequencyData,
+  prefersReducedMotion = false,
 }: {
   className?: string;
   frequencyData?: Uint8Array | null;
+  prefersReducedMotion?: boolean;
 }) {
   const [bars, setBars] = useState<number[]>(
     () => Array.from({ length: BAR_COUNT }, () => Math.random() * 40 + 10),
@@ -39,6 +41,12 @@ export function StatusBar({
     // If real frequency data is flowing, skip idle animation
     if (frequencyData && frequencyData.some((v) => v > 0)) return;
 
+    // H21: If prefers-reduced-motion, show static bars
+    if (prefersReducedMotion) {
+      setBars(Array.from({ length: BAR_COUNT }, (_, i) => 20 + (i % 3) * 15));
+      return;
+    }
+
     let frame = 0;
     const interval = setInterval(() => {
       frame++;
@@ -54,7 +62,7 @@ export function StatusBar({
     }, 80); // Fast updates for smooth wave
 
     return () => clearInterval(interval);
-  }, [frequencyData]);
+  }, [frequencyData, prefersReducedMotion]);
 
   return (
     <div className={`flex items-end gap-[2px] h-6 ${className}`} aria-hidden="true">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Particle {
   x: number;
@@ -20,7 +20,15 @@ export function ParticleField({ className = "" }: { className?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const particlesRef = useRef<Particle[]>([]);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -41,15 +49,6 @@ export function ParticleField({ className = "" }: { className?: string }) {
 
     const handleResize = () => resizeCanvas();
     window.addEventListener("resize", handleResize);
-
-    const handleMouseMove = (e: MouseEvent) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = {
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top,
-      };
-    };
-    canvas.addEventListener("mousemove", handleMouseMove);
 
     const createParticle = (): Particle => {
       const rect = canvas.parentElement?.getBoundingClientRect();
@@ -77,6 +76,27 @@ export function ParticleField({ className = "" }: { className?: string }) {
       particlesRef.current.push(p);
     }
 
+    // H21: If prefers-reduced-motion, render static dots and stop
+    if (prefersReducedMotion) {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      const w = rect?.width ?? 800;
+      const h = rect?.height ?? 600;
+      ctx.clearRect(0, 0, w, h);
+      for (const p of particlesRef.current) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 0.5;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+      return () => {
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+
+    // M35: Removed mousemove listener — canvas has pointer-events-none so it was dead code
+
     const draw = () => {
       const rect = canvas.parentElement?.getBoundingClientRect();
       const w = rect?.width ?? 800;
@@ -84,7 +104,6 @@ export function ParticleField({ className = "" }: { className?: string }) {
       ctx.clearRect(0, 0, w, h);
 
       const particles = particlesRef.current;
-      const mouse = mouseRef.current;
 
       for (let i = particles.length - 1; i >= 0; i--) {
         const p = particles[i];
@@ -101,16 +120,6 @@ export function ParticleField({ className = "" }: { className?: string }) {
           p.opacity = (1 - lifeRatio) / 0.2;
         } else {
           p.opacity = 1;
-        }
-
-        // Mouse interaction - gentle repulsion
-        const dx = p.x - mouse.x;
-        const dy = p.y - mouse.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 80 && dist > 0) {
-          const force = (80 - dist) / 80;
-          p.vx += (dx / dist) * force * 0.02;
-          p.vy += (dy / dist) * force * 0.02;
         }
 
         // Dampen velocity
@@ -174,9 +183,8 @@ export function ParticleField({ className = "" }: { className?: string }) {
     return () => {
       cancelAnimationFrame(animationRef.current);
       window.removeEventListener("resize", handleResize);
-      canvas.removeEventListener("mousemove", handleMouseMove);
     };
-  }, []);
+  }, [prefersReducedMotion]);
 
   return (
     <canvas

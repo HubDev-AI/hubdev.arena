@@ -26,10 +26,10 @@ export const dynamic = "force-dynamic";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string | string[]; error?: string }>;
+  searchParams: Promise<{ next?: string | string[]; error?: string; logged_out?: string }>;
 }) {
   const session = await getBuilderSession();
-  const { next, error } = await searchParams;
+  const { next, error, logged_out } = await searchParams;
   const redirectTo = resolveLoginRedirectPath(next);
 
   if (session) {
@@ -57,9 +57,10 @@ export default async function LoginPage({
             ? "This local shell ships with mock member profiles so the end-to-end flow for submissions and voting can run without external auth setup."
             : "Sign in with your X account or email to submit apps and vote on matchups."}
         </p>
-        {error === "auth_failed" ? (
-          <p role="alert" className="border-[2px] border-[var(--accent-red)] bg-red-900/30 px-4 py-3 font-mono text-sm font-bold text-red-400">
-            Authentication failed. Please try again.
+        {/* L25: Signed out confirmation */}
+        {logged_out === "true" ? (
+          <p role="status" className="border-[2px] border-[var(--accent-green)] bg-emerald-900/30 px-4 py-3 font-mono text-sm font-bold text-emerald-400">
+            You&apos;ve been signed out successfully.
           </p>
         ) : null}
         </div>
@@ -89,7 +90,7 @@ export default async function LoginPage({
               Sign in
             </p>
             <div className="mt-5">
-              <LoginForm redirectTo={redirectTo} />
+              <LoginForm redirectTo={redirectTo} urlError={error} />
             </div>
           </>
         )}

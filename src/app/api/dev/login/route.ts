@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getDataMode, getEnv } from "@/lib/env";
+import { assertCsrf } from "@/lib/security/csrf";
 import { signValue } from "@/lib/security/signed-value";
 import { BUILDER_COOKIE_NAME } from "@/lib/server/auth";
 import { getMockArenaRepository } from "@/lib/server/mock-seed";
@@ -8,6 +9,13 @@ import { getMockArenaRepository } from "@/lib/server/mock-seed";
 export async function POST(request: Request) {
   if ((process.env.NODE_ENV as string) === "production" || getDataMode() !== "mock") {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
+  }
+
+  // H38: CSRF protection — require X-Requested-With header
+  try {
+    assertCsrf(request);
+  } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const body = (await request.json()) as { profileId?: string };

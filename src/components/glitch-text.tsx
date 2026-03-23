@@ -14,9 +14,20 @@ export function GlitchText({
   const [displayText, setDisplayText] = useState(text);
   const [isGlitching, setIsGlitching] = useState(false);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
 
   useEffect(() => {
     setDisplayText(text);
+    // H21: Skip glitch animation if prefers-reduced-motion
+    if (prefersReducedMotion) return;
     // Run one initial glitch on mount for dramatic effect
     if (!hasInitialized) {
       setHasInitialized(true);
@@ -24,10 +35,12 @@ export function GlitchText({
       return () => clearTimeout(timer);
     }
     return undefined;
-  }, [text]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [text, prefersReducedMotion]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const triggerGlitch = () => {
-    if (isGlitching) return;
+    // H21: Skip if prefers-reduced-motion
+    if (prefersReducedMotion || isGlitching) return;
+
     setIsGlitching(true);
 
     const chars = "!@#$%^&*()_+-=[]{}|;':\",./<>?01";
@@ -59,7 +72,7 @@ export function GlitchText({
   return (
     <span
       className={className}
-      onMouseEnter={glitchOnHover ? triggerGlitch : undefined}
+      onMouseEnter={glitchOnHover && !prefersReducedMotion ? triggerGlitch : undefined}
       style={{ display: "inline-block" }}
     >
       {displayText}

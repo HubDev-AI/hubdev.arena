@@ -31,9 +31,24 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function SubmitPage() {
-  await requireBuilderSession("/submit");
-  const weeks = await getArenaService().listWeeks();
+  const session = await requireBuilderSession("/submit");
+  const service = getArenaService();
+  const weeks = await service.listWeeks();
   const openWeek = weeks.find((week) => week.status === "submissions_open");
+
+  // C7: Check if the builder already has a pending entry for this week
+  let hasPendingEntry = false;
+  if (openWeek) {
+    try {
+      const submissions = await service.getMySubmissions(session.userId);
+      const openWeekGroup = submissions.find((group) => group.week.id === openWeek.id);
+      if (openWeekGroup) {
+        hasPendingEntry = openWeekGroup.entries.some((entry) => entry.status === "pending");
+      }
+    } catch {
+      // Non-critical — proceed without the warning
+    }
+  }
 
   return (
     <div className="page-bg page-bg-default">
@@ -61,14 +76,15 @@ export default async function SubmitPage() {
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-[var(--muted)]">
                   Open week
                 </p>
-                <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--ink)]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
+                {/* L6: Fixed contrast — was text-[var(--ink)] (dark on dark), now text-[var(--text-primary)] (light on dark) */}
+                <p className="mt-3 text-2xl font-black tracking-[-0.05em] text-[var(--text-primary)]" style={{ textShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
                   {openWeek.themeTitle}
                 </p>
                 <p className="mt-2 text-base text-[var(--muted)]">{openWeek.themeDescription}</p>
               </div>
             </ScrollReveal>
             <ScrollReveal delay={100}>
-              <SubmitForm weekSlug={openWeek.slug} />
+              <SubmitForm weekSlug={openWeek.slug} hasPendingEntry={hasPendingEntry} />
             </ScrollReveal>
           </>
         ) : (

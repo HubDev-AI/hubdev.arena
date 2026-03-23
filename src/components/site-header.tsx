@@ -25,7 +25,8 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
               <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
                 HubDev Arena
               </p>
-              <span className="inline-flex items-center gap-1 rounded-sm border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase tracking-widest text-[var(--accent-green)]">
+              {/* M34: Increase text-[8px] to text-[11px] minimum */}
+              <span className="inline-flex items-center gap-1 rounded-sm border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 px-1.5 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest text-[var(--accent-green)]">
                 <span className="relative flex h-1.5 w-1.5">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--accent-green)] opacity-75" />
                   <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--accent-green)]" />
@@ -49,32 +50,33 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
         </nav>
 
         <div className="flex items-center gap-2">
-          {/* Desktop auth controls — hidden on mobile, mobile-menu handles those */}
-          <div className="hidden items-center gap-2 sm:flex">
+          {/* M39: Desktop auth controls — changed sm:flex to md:flex to match nav links breakpoint */}
+          <div className="hidden items-center gap-2 md:flex">
             {session ? (
               <>
                 <div className="flex items-center gap-2.5 rounded-sm border border-[var(--accent-green)]/20 bg-[var(--accent-green)]/5 px-3 py-1.5 transition-all hover:border-[var(--accent-green)]/40 hover:shadow-[0_0_12px_rgba(0,255,65,0.1)]">
-                  {/* Initials avatar */}
-                  <div className="flex h-7 w-7 items-center justify-center bg-[var(--accent-green)]/10 font-mono text-[10px] font-bold text-[var(--accent-green)]" style={{ boxShadow: "inset 0 0 8px rgba(0, 255, 65, 0.08)" }}>
+                  {/* Initials avatar — M34: increase text-[10px] to text-[11px] */}
+                  <div className="flex h-7 w-7 items-center justify-center bg-[var(--accent-green)]/10 font-mono text-[11px] font-bold text-[var(--accent-green)]" style={{ boxShadow: "inset 0 0 8px rgba(0, 255, 65, 0.08)" }}>
                     {session.displayName.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
                   </div>
                   <div className="text-center">
                     <p className="text-xs font-bold leading-tight text-[var(--text-primary)]">{session.displayName}</p>
-                    <p className="font-mono text-[8px] uppercase tracking-[0.2em] leading-tight text-[var(--accent-green)]">
+                    {/* M34: Increase text-[8px] to text-[11px] minimum */}
+                    <p className="font-mono text-[11px] uppercase tracking-[0.2em] leading-tight text-[var(--accent-green)]">
                       {session.isAdmin ? "Admin" : "Member"}
                     </p>
                   </div>
                 </div>
                 <Link
                   href="/my-submissions"
-                  className="brutal-btn brutal-btn-outline text-[10px] px-3 py-2"
+                  className="brutal-btn brutal-btn-outline text-[11px] px-3 py-2"
                 >
                   Entries
                 </Link>
                 {session.isAdmin ? (
                   <Link
                     href="/admin/weeks"
-                    className="brutal-btn brutal-btn-dark text-[10px] px-3 py-2"
+                    className="brutal-btn brutal-btn-dark text-[11px] px-3 py-2"
                   >
                     Admin
                   </Link>
@@ -84,7 +86,7 @@ export function SiteHeader({ session, dataMode }: { session: BuilderSession | nu
             ) : (
               <Link
                 href="/login"
-                className="brutal-btn brutal-btn-dark text-[10px] px-3 py-2"
+                className="brutal-btn brutal-btn-dark text-[11px] px-3 py-2"
               >
                 Sign in
               </Link>

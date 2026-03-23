@@ -24,7 +24,9 @@ const createWeekSchema = z.object({
 const weekSlugSchema = z.string().min(1).max(50).regex(slugPattern, "Invalid week slug.");
 const entryIdSchema = z.string().uuid("Invalid entry ID.");
 
-export async function createWeekAction(formData: FormData) {
+export type ActionResult = { success: boolean; error?: string };
+
+export async function createWeekAction(formData: FormData): Promise<ActionResult> {
   const session = await requireAdminSession("/admin/weeks");
 
   const parsed = createWeekSchema.safeParse({
@@ -40,74 +42,166 @@ export async function createWeekAction(formData: FormData) {
 
   if (!parsed.success) {
     const firstError = parsed.error.issues[0]?.message ?? "Invalid input.";
-    throw new Error(firstError);
+    return { success: false, error: firstError };
   }
 
-  await getArenaService().createWeek({
-    adminEmail: session.email,
-    ...parsed.data,
-  });
+  // M23: Validate chronological ordering of dates
+  const { submissionOpenAt, submissionCloseAt, votingOpenAt, votingCloseAt } = parsed.data;
+  const subOpen = new Date(submissionOpenAt).getTime();
+  const subClose = new Date(submissionCloseAt).getTime();
+  const voteOpen = new Date(votingOpenAt).getTime();
+  const voteClose = new Date(votingCloseAt).getTime();
+
+  if (subOpen >= subClose) {
+    return { success: false, error: "Submission open must be before submission close." };
+  }
+  if (subClose > voteOpen) {
+    return { success: false, error: "Submission close must be on or before voting open." };
+  }
+  if (voteOpen >= voteClose) {
+    return { success: false, error: "Voting open must be before voting close." };
+  }
+
+  try {
+    await getArenaService().createWeek({
+      adminEmail: session.email,
+      ...parsed.data,
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create week.";
+    return { success: false, error: message };
+  }
 
   revalidatePath("/admin/weeks");
   redirect(`/admin/weeks/${parsed.data.slug}`);
 }
 
-export async function reviewEntryAction(formData: FormData) {
-  const session = await requireAdminSession("/admin/weeks");
-  const weekSlug = weekSlugSchema.parse(formData.get("weekSlug") ?? "");
-  const entryId = entryIdSchema.parse(formData.get("entryId") ?? "");
+export async function reviewEntryAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const session = await requireAdminSession("/admin/weeks");
+    const slugResult = weekSlugSchema.safeParse(formData.get("weekSlug") ?? "");
+    if (!slugResult.success) {
+      return { success: false, error: "Invalid week slug." };
+    }
+    const weekSlug = slugResult.data;
 
-  await getArenaService().reviewEntry({
-    adminEmail: session.email,
-    entryId,
-    decision: String(formData.get("decision")) === "approved" ? "approved" : "rejected",
-  });
+    const entryResult = entryIdSchema.safeParse(formData.get("entryId") ?? "");
+    if (!entryResult.success) {
+      return { success: false, error: "Invalid entry ID." };
+    }
+    const entryId = entryResult.data;
 
-  revalidatePath(`/admin/weeks/${weekSlug}`);
+    await getArenaService().reviewEntry({
+      adminEmail: session.email,
+      entryId,
+      decision: String(formData.get("decision")) === "approved" ? "approved" : "rejected",
+    });
+
+    revalidatePath(`/admin/weeks/${weekSlug}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to review entry.";
+    return { success: false, error: message };
+  }
 }
 
-export async function openSubmissionsAction(formData: FormData) {
-  const session = await requireAdminSession("/admin/weeks");
-  const weekSlug = weekSlugSchema.parse(formData.get("weekSlug") ?? "");
+export async function openSubmissionsAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const session = await requireAdminSession("/admin/weeks");
+    const slugResult = weekSlugSchema.safeParse(formData.get("weekSlug") ?? "");
+    if (!slugResult.success) {
+      return { success: false, error: "Invalid week slug." };
+    }
+    const weekSlug = slugResult.data;
 
-  await getArenaService().setWeekStatus({
-    adminEmail: session.email,
-    weekSlug,
-    action: "open_submissions",
-  });
+    await getArenaService().setWeekStatus({
+      adminEmail: session.email,
+      weekSlug,
+      action: "open_submissions",
+    });
 
-  revalidatePath("/admin/weeks");
-  revalidatePath(`/admin/weeks/${weekSlug}`);
+    revalidatePath("/admin/weeks");
+    revalidatePath(`/admin/weeks/${weekSlug}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to open submissions.";
+    return { success: false, error: message };
+  }
 }
 
-export async function openVotingAction(formData: FormData) {
-  const session = await requireAdminSession("/admin/weeks");
-  const weekSlug = weekSlugSchema.parse(formData.get("weekSlug") ?? "");
+export async function openVotingAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const session = await requireAdminSession("/admin/weeks");
+    const slugResult = weekSlugSchema.safeParse(formData.get("weekSlug") ?? "");
+    if (!slugResult.success) {
+      return { success: false, error: "Invalid week slug." };
+    }
+    const weekSlug = slugResult.data;
 
-  await getVoteEngine().openVoting(weekSlug, session.email);
-  revalidatePath("/admin/weeks");
-  revalidatePath(`/admin/weeks/${weekSlug}`);
+    await getVoteEngine().openVoting(weekSlug, session.email);
+    revalidatePath("/admin/weeks");
+    revalidatePath(`/admin/weeks/${weekSlug}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to open voting.";
+    return { success: false, error: message };
+  }
 }
 
-export async function lockWeekAction(formData: FormData) {
-  const session = await requireAdminSession("/admin/weeks");
-  const weekSlug = weekSlugSchema.parse(formData.get("weekSlug") ?? "");
+export async function lockWeekAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const session = await requireAdminSession("/admin/weeks");
+    const slugResult = weekSlugSchema.safeParse(formData.get("weekSlug") ?? "");
+    if (!slugResult.success) {
+      return { success: false, error: "Invalid week slug." };
+    }
+    const weekSlug = slugResult.data;
 
-  await getVoteEngine().lockWeek(weekSlug, session.email);
-  revalidatePath("/admin/weeks");
-  revalidatePath(`/admin/weeks/${weekSlug}`);
+    await getVoteEngine().lockWeek(weekSlug, session.email);
+    revalidatePath("/admin/weeks");
+    revalidatePath(`/admin/weeks/${weekSlug}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to lock week.";
+    return { success: false, error: message };
+  }
 }
 
-export async function archiveWeekAction(formData: FormData) {
-  const session = await requireAdminSession("/admin/weeks");
-  const weekSlug = weekSlugSchema.parse(formData.get("weekSlug") ?? "");
+export async function archiveWeekAction(
+  _prevState: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const session = await requireAdminSession("/admin/weeks");
+    const slugResult = weekSlugSchema.safeParse(formData.get("weekSlug") ?? "");
+    if (!slugResult.success) {
+      return { success: false, error: "Invalid week slug." };
+    }
+    const weekSlug = slugResult.data;
 
-  await getArenaService().setWeekStatus({
-    adminEmail: session.email,
-    weekSlug,
-    action: "archive",
-  });
+    await getArenaService().setWeekStatus({
+      adminEmail: session.email,
+      weekSlug,
+      action: "archive",
+    });
 
-  revalidatePath("/admin/weeks");
-  revalidatePath(`/admin/weeks/${weekSlug}`);
+    revalidatePath("/admin/weeks");
+    revalidatePath(`/admin/weeks/${weekSlug}`);
+    return { success: true };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to archive week.";
+    return { success: false, error: message };
+  }
 }

@@ -111,7 +111,7 @@ export default async function Home() {
 
   const service = getArenaService();
   const leaderboard = await service.getLeaderboard({ weekSlug: week.slug });
-  const featuredEntries = leaderboard.slice(0, 3);
+  const featuredEntries = leaderboard.length >= 2 ? leaderboard.slice(0, 4) : [];
   const pastWinners = await service.listPastWinners(2);
 
   return (
@@ -159,13 +159,13 @@ export default async function Home() {
               </div>
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <MagneticButton>
-                  <Link href="/vote" className="brutal-btn brutal-btn-green hover-lift">
-                    Start Voting
+                  <Link href={session ? "/vote" : "/login?next=/vote"} className="brutal-btn brutal-btn-green hover-lift">
+                    {session ? "Start Voting" : "Sign in to Vote"}
                   </Link>
                 </MagneticButton>
                 <MagneticButton>
-                  <Link href="/submit" className="brutal-btn brutal-btn-outline hover-lift">
-                    {session ? "Submit your build" : "Sign in"}
+                  <Link href={session ? "/submit" : "/login?next=/submit"} className="brutal-btn brutal-btn-outline hover-lift">
+                    {session ? "Submit your build" : "Submit Your Build"}
                   </Link>
                 </MagneticButton>
                 <MusicVisualizer className="ml-auto hidden sm:flex" />
@@ -295,6 +295,8 @@ export default async function Home() {
       <div className="data-stream-divider" />
 
       <section className="space-y-5">
+        {featuredEntries.length > 0 && (
+        <>
         <ScrollReveal>
           <div className="brutal-card flex flex-wrap items-end justify-between gap-4 p-6 sm:p-8">
             <div>
@@ -309,14 +311,14 @@ export default async function Home() {
           </div>
         </ScrollReveal>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2">
           {featuredEntries.map((entry, idx) => (
             <ScrollReveal key={entry.entrySlug} delay={idx * 120}>
               <TiltCard className="h-full">
-              <article className={`brutal-card h-full overflow-hidden group glitch-hover ${idx === 0 ? "border-t-[3px] border-t-[var(--accent-yellow)]" : idx === 1 ? "border-t-[3px] border-t-[var(--accent-cyan)]" : "border-t-[3px] border-t-[var(--accent-purple)]"}`} style={idx === 0 ? { boxShadow: "0 4px 20px rgba(0,0,0,0.3), 0 0 20px rgba(255, 214, 0, 0.08)" } : idx === 1 ? { boxShadow: "0 4px 20px rgba(0,0,0,0.3), 0 0 15px rgba(0, 255, 170, 0.06)" } : { boxShadow: "0 4px 20px rgba(0,0,0,0.3), 0 0 15px rgba(139, 92, 246, 0.06)" }}>
+              <article className={`brutal-card h-full overflow-hidden group glitch-hover border-t-[3px] ${idx === 0 ? "border-t-[var(--accent-yellow)]" : idx === 1 ? "border-t-[var(--accent-cyan)]" : idx === 2 ? "border-t-[var(--accent-purple)]" : "border-t-[var(--accent-blue)]"}`} style={{ boxShadow: idx === 0 ? "0 4px 20px rgba(0,0,0,0.3), 0 0 20px rgba(255, 214, 0, 0.08)" : idx === 1 ? "0 4px 20px rgba(0,0,0,0.3), 0 0 15px rgba(0, 255, 170, 0.06)" : idx === 2 ? "0 4px 20px rgba(0,0,0,0.3), 0 0 15px rgba(139, 92, 246, 0.06)" : "0 4px 20px rgba(0,0,0,0.3), 0 0 15px rgba(0, 51, 255, 0.06)" }}>
                 <div className="img-zoom relative">
                   <EntryMedia assetPath={entry.demoAssetUrl} title={entry.title} className="h-48" />
-                  <div className={`absolute left-0 top-3 border-r-[2px] border-y-[2px] border-[var(--line)] px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${idx === 0 ? "bg-[var(--accent-yellow)] text-black" : idx === 1 ? "bg-[var(--accent-cyan)] text-black" : "bg-[var(--accent-purple)] text-white"}`}>
+                  <div className={`absolute left-0 top-3 border-r-[2px] border-y-[2px] border-[var(--line)] px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-wider ${idx === 0 ? "bg-[var(--accent-yellow)] text-black" : idx === 1 ? "bg-[var(--accent-cyan)] text-black" : idx === 2 ? "bg-[var(--accent-purple)] text-white" : "bg-[var(--accent-blue)] text-white"}`}>
                     #{idx + 1}
                   </div>
                 </div>
@@ -367,6 +369,8 @@ export default async function Home() {
             </ScrollReveal>
           ))}
         </div>
+        </>
+        )}
 
         {pastWinners.length > 0 ? (
           <ScrollReveal>
@@ -377,17 +381,21 @@ export default async function Home() {
                 </p>
               </div>
               {pastWinners.map((item) => (
-                <div key={item.week.slug} className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/5 group">
+                <Link key={item.week.slug} href={item.topEntry ? `/entry/${item.topEntry.entrySlug}` : `/leaderboard`} className="flex items-center justify-between gap-4 px-5 py-4 transition hover:bg-white/5 group">
                   <div>
                     <p className="text-base font-black tracking-tight text-[var(--text-primary)] group-hover:text-[var(--accent-green)] transition">
                       {item.topEntry?.title}
                     </p>
-                    <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{item.week.themeTitle}</p>
+                    <div className="mt-0.5 flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+                      {item.topEntry?.builderName && <span>by {item.topEntry.builderName}</span>}
+                      {item.topEntry?.builderName && <span className="text-gray-600">&middot;</span>}
+                      <span>{item.week.themeTitle}</span>
+                    </div>
                   </div>
                   <span className="brutal-badge brutal-badge-green pulse-ring">
                     Winner
                   </span>
-                </div>
+                </Link>
               ))}
             </div>
           </ScrollReveal>
@@ -396,8 +404,13 @@ export default async function Home() {
 
       {/* Leaderboard preview */}
       <ScrollReveal>
-        <section aria-label="Weekly leaderboard">
+        <section aria-label="Weekly leaderboard" className="space-y-3">
           <LeaderboardTable rows={leaderboard.slice(0, 5)} />
+          <div className="text-right">
+            <Link href="/leaderboard" className="inline-flex items-center gap-1 text-sm font-bold text-[var(--accent-green)] transition hover:underline">
+              View full leaderboard <span aria-hidden="true">&rarr;</span>
+            </Link>
+          </div>
         </section>
       </ScrollReveal>
 
@@ -412,7 +425,7 @@ export default async function Home() {
           <div className="grid gap-0 divide-y divide-[var(--line)] sm:grid-cols-3 sm:divide-x sm:divide-y-0">
             <div className="p-5 border-t-[2px] border-t-[var(--accent-green)]">
               <p className="text-3xl font-black text-[var(--accent-green)] neon-text" style={{ animation: "number-glow 3s ease-in-out infinite" }}>
-                <AnimatedCounter value={1200} />
+                1,200
               </p>
               <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">Starting rating</p>
               <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">Every new entry starts at 1200 ELO. Your rating reflects how your app performs against other competitors.</p>
@@ -423,9 +436,9 @@ export default async function Home() {
               <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">Beat a higher-rated entry and gain more points. Lose to a lower-rated one and drop more. Upsets are rewarded.</p>
             </div>
             <div className="p-5 border-t-[2px] border-t-[var(--accent-yellow)]">
-              <p className="text-3xl font-black text-[var(--accent-yellow)]" style={{ textShadow: "0 0 10px rgba(255, 214, 0, 0.4)" }}>K=32</p>
+              <p className="text-3xl font-black text-[var(--accent-yellow)]" style={{ textShadow: "0 0 10px rgba(255, 214, 0, 0.4)" }}>K=24</p>
               <p className="mt-1 text-sm font-bold text-[var(--text-primary)]">Sensitivity factor</p>
-              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">We use a K-factor of 32 so early matchups can move the leaderboard quickly and every vote matters.</p>
+              <p className="mt-2 text-sm text-[var(--text-secondary)] leading-relaxed">We use a K-factor of 24 so early matchups can move the leaderboard quickly and every vote matters.</p>
             </div>
           </div>
         </SpotlightCard>

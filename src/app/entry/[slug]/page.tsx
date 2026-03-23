@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 
 import { AnimatedCounter } from "@/components/animated-counter";
 import { AuroraBg } from "@/components/aurora-bg";
-import { DecodeText } from "@/components/decode-text";
 import { EntryMedia } from "@/components/entry-media";
 import { GlitchText } from "@/components/glitch-text";
 import { InfoTooltip } from "@/components/info-tooltip";
@@ -15,6 +14,11 @@ import { safeHref } from "@/lib/safe-href";
 import { getArenaService } from "@/lib/server/runtime";
 
 export const dynamic = "force-dynamic";
+
+function isValidUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return safeHref(url) !== "#";
+}
 
 export async function generateMetadata({
   params,
@@ -39,14 +43,14 @@ export async function generateMetadata({
       canonical: url,
     },
     openGraph: {
-      title: `${detail.entry.title} — HubDev Arena`,
+      title: `${detail.entry.title} -- HubDev Arena`,
       description,
       url,
       type: "article",
     },
     twitter: {
       card: "summary_large_image",
-      title: `${detail.entry.title} — HubDev Arena`,
+      title: `${detail.entry.title} -- HubDev Arena`,
       description,
     },
   };
@@ -105,12 +109,14 @@ export default async function EntryDetailPage({
     applicationCategory: "WebApplication",
   };
 
+  const hasValidLiveUrl = isValidUrl(detail.entry.liveUrl);
+
   return (
     <div className="page-bg page-bg-default">
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={entryJsonLd} />
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
-        {/* Dark hero banner — matches homepage style */}
+        {/* Dark hero banner -- matches homepage style */}
         <div className="brutal-card relative overflow-hidden arena-hero-bg neon-box scanlines p-6 text-white sm:p-8">
           <AuroraBg />
           <div className="absolute right-0 top-0 h-20 w-20 bg-[var(--accent-green)]" style={{ clipPath: "polygon(100% 0, 0 0, 100% 100%)" }} />
@@ -124,13 +130,20 @@ export default async function EntryDetailPage({
           </Link>
 
           <div className="mt-4">
-            <nav className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-gray-400" aria-label="Breadcrumb">
-              <Link href="/leaderboard" className="transition hover:text-white">
-                Leaderboard
-              </Link>
-              <span aria-hidden="true">/</span>
-              <span className="neon-text text-[var(--accent-green)]">{detail.week.themeTitle}</span>
-              <LiveBadge className="ml-2" />
+            {/* L20: Breadcrumb with proper list semantics */}
+            <nav aria-label="Breadcrumb">
+              <ol className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-[0.2em] text-gray-400 list-none m-0 p-0">
+                <li>
+                  <Link href="/leaderboard" className="transition hover:text-white">
+                    Leaderboard
+                  </Link>
+                </li>
+                <li aria-hidden="true">/</li>
+                <li className="flex items-center gap-2">
+                  <span className="neon-text text-[var(--accent-green)]">{detail.week.themeTitle}</span>
+                  <LiveBadge className="ml-2" />
+                </li>
+              </ol>
             </nav>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-black uppercase tracking-tight text-white sm:text-4xl">
@@ -160,9 +173,9 @@ export default async function EntryDetailPage({
             <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-yellow)]">
               <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Record</p>
               <p className="mt-1 text-sm font-black tracking-tight">
-                <span className="neon-text text-[var(--accent-green)]">{detail.entry.wins}W</span>
+                <span className="neon-text text-[var(--accent-green)]">W {detail.entry.wins}</span>
                 <span className="text-gray-500"> / </span>
-                <span className="text-red-400">{detail.entry.losses}L</span>
+                <span className="text-red-400">L {detail.entry.losses}</span>
               </p>
             </div>
             <div className="glass-card p-3 border-t-[3px] border-t-[var(--accent-cyan)]">
@@ -175,26 +188,36 @@ export default async function EntryDetailPage({
         {/* Demo + actions row */}
         <ScrollReveal>
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_260px]">
-          {/* Demo screenshot */}
+          {/* Demo screenshot -- M46: taller media area */}
           <div className="brutal-card img-zoom hud-corners overflow-hidden p-0 relative">
-            <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-48 sm:h-64" />
+            <EntryMedia assetPath={detail.entry.demoAssetPath} title={detail.entry.title} className="h-64 sm:h-80 lg:h-96" />
             <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-[var(--accent-green)] via-[var(--accent-green)]/40 to-transparent" />
           </div>
 
-          {/* Sidebar — stretches to match */}
+          {/* Sidebar -- stretches to match */}
           <div className="brutal-card holo-shimmer hud-corners flex flex-col overflow-hidden p-0 border-l-[4px] border-l-[var(--accent-green)]">
             <div className="bg-[var(--ink)] px-5 py-3">
               <p className="font-mono text-[11px] uppercase tracking-[0.3em] neon-text text-[var(--accent-green)]">Actions</p>
             </div>
             <div className="space-y-3 p-4">
-              <a
-                href={safeHref(detail.entry.liveUrl)}
-                target="_blank"
-                rel="noreferrer"
-                className="brutal-btn brutal-btn-green hover-lift w-full text-center"
-              >
-                Open app &rarr;
-              </a>
+              {/* M50: Only render clickable button for valid URLs */}
+              {hasValidLiveUrl ? (
+                <a
+                  href={safeHref(detail.entry.liveUrl)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="brutal-btn brutal-btn-green hover-lift w-full text-center"
+                >
+                  Open app &rarr;
+                </a>
+              ) : (
+                <span
+                  className="brutal-btn brutal-btn-outline w-full text-center opacity-50 cursor-not-allowed block"
+                  aria-disabled="true"
+                >
+                  No link available
+                </span>
+              )}
               <Link href="/vote" className="brutal-btn brutal-btn-outline hover-lift w-full text-center">
                 Vote in matchups
               </Link>

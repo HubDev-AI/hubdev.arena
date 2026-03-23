@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 export function SpotlightCard({
   children,
@@ -12,8 +12,29 @@ export function SpotlightCard({
   spotlightColor?: string;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const disabledRef = useRef(false);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    const update = () => {
+      disabledRef.current = mq.matches || isTouchDevice || window.innerWidth < 768;
+    };
+    update();
+
+    const handler = () => update();
+    mq.addEventListener("change", handler);
+    window.addEventListener("resize", handler);
+
+    return () => {
+      mq.removeEventListener("change", handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabledRef.current) return;
     const card = cardRef.current;
     if (!card) return;
     const rect = card.getBoundingClientRect();
@@ -21,7 +42,7 @@ export function SpotlightCard({
     const y = e.clientY - rect.top;
     card.style.setProperty("--spotlight-x", `${x}px`);
     card.style.setProperty("--spotlight-y", `${y}px`);
-  };
+  }, []);
 
   return (
     <div

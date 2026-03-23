@@ -30,8 +30,10 @@ export function TypingText({
       timeout = setTimeout(() => setIsDeleting(true), pauseDuration);
     } else if (isDeleting && currentText === "") {
       // Move to next phrase
-      setIsDeleting(false);
-      setCurrentPhrase((prev) => (prev + 1) % phrases.length);
+      timeout = setTimeout(() => {
+        setIsDeleting(false);
+        setCurrentPhrase((prev) => (prev + 1) % phrases.length);
+      }, 0);
     } else if (isDeleting) {
       timeout = setTimeout(() => {
         setCurrentText((prev) => prev.slice(0, -1));

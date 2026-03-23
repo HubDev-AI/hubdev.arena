@@ -9,5 +9,9 @@ export async function POST() {
   }
 
   resetMockArenaRepository();
+  // M24: Also clear the cached service so the next request creates a fresh
+  // instance backed by the new repository. Without this, the old service
+  // still references the stale (pre-reset) repository.
+  globalThis.__hubdevArenaService = undefined;
   return NextResponse.json({ ok: true });
 }

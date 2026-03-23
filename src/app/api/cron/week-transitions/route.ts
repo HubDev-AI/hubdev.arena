@@ -12,6 +12,11 @@ function verifyBearerToken(authHeader: string | null, secret: string | undefined
   return timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected));
 }
 
+// L38: Warn at module load if CRON_SECRET is not configured
+if (!process.env.CRON_SECRET) {
+  console.warn("[HubDev Arena] CRON_SECRET is not set — automated week transitions will not work");
+}
+
 // Vercel Cron Jobs invoke routes via GET. This endpoint is state-mutating
 // but must remain GET for Vercel cron compatibility. Auth is handled via
 // bearer token, and CSRF is not applicable (server-to-server call).

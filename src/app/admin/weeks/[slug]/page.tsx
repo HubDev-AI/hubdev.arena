@@ -3,17 +3,12 @@ import Link from "next/link";
 
 import { AuroraBg } from "@/components/aurora-bg";
 import { GlitchText } from "@/components/glitch-text";
-import {
-  archiveWeekAction,
-  lockWeekAction,
-  openSubmissionsAction,
-  openVotingAction,
-  reviewEntryAction,
-} from "@/app/admin/actions";
-import { ConfirmForm } from "@/app/admin/weeks/[slug]/confirm-form";
-import { safeHref } from "@/lib/safe-href";
 import { requireAdminSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
+
+import { WeekActions } from "./week-actions";
+import { EntryModeration } from "./entry-moderation";
+import { LeaderboardPreview } from "./leaderboard-preview";
 
 export const metadata: Metadata = {
   title: "Admin: Week Detail",
@@ -40,9 +35,51 @@ export default async function AdminWeekDetailPage({
           ? "var(--accent-blue)"
           : "var(--text-secondary)";
 
+  const approvedCount = detail.entries.filter((e) => e.status === "approved").length;
+  const pendingCount = detail.entries.filter((e) => e.status === "pending").length;
+
+  // Build builder name map from leaderboard data (approved entries)
+  const builderNameMap = new Map<string, string>();
+  for (const row of detail.leaderboard) {
+    builderNameMap.set(row.entrySlug, row.builderName);
+  }
+
+  // Build serializable entry data with builder names (L36)
+  const entriesWithMeta = detail.entries.map((entry) => ({
+    id: entry.id,
+    title: entry.title,
+    oneLiner: entry.oneLiner,
+    liveUrl: entry.liveUrl,
+    status: entry.status as "pending" | "approved" | "rejected",
+    rejectionNote: entry.rejectionNote,
+    builderName: builderNameMap.get(entry.slug) ?? null,
+    builderId: entry.builderId,
+  }));
+
   return (
     <div className="page-bg page-bg-default">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 sm:px-6 lg:px-8">
+        {/* M28: Breadcrumbs */}
+        <nav aria-label="Breadcrumb" className="font-mono text-[11px] uppercase tracking-[0.2em]">
+          <ol className="flex items-center gap-1 text-[var(--text-secondary)]">
+            <li>
+              <Link href="/admin" className="transition hover:text-[var(--accent-green)]">
+                Admin
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-[var(--text-secondary)]">/</li>
+            <li>
+              <Link href="/admin/weeks" className="transition hover:text-[var(--accent-green)]">
+                Weeks
+              </Link>
+            </li>
+            <li aria-hidden="true" className="text-[var(--text-secondary)]">/</li>
+            <li className="text-[var(--text-primary)]" aria-current="page">
+              {detail.week.themeTitle}
+            </li>
+          </ol>
+        </nav>
+
         {/* Dark hero header */}
         <div className="brutal-card neon-box relative overflow-hidden arena-hero-bg p-6 text-white sm:p-8">
           <AuroraBg />
@@ -70,8 +107,8 @@ export default async function AdminWeekDetailPage({
               </p>
             </div>
 
-            {/* Stats row */}
-            <div className="mt-6 grid gap-3 sm:grid-cols-4">
+            {/* Stats row -- M17: grid-cols-2 sm:grid-cols-4 */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-green)]">
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Entries</p>
                 <p className="mt-1 text-lg font-black text-white">{detail.entries.length}</p>
@@ -82,144 +119,35 @@ export default async function AdminWeekDetailPage({
               </div>
               <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px] border-t-[var(--accent-yellow)]">
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Approved</p>
-                <p className="mt-1 text-lg font-black text-[var(--accent-green)]">{detail.entries.filter(e => e.status === "approved").length}</p>
+                <p className="mt-1 text-lg font-black text-[var(--accent-green)]">{approvedCount}</p>
               </div>
               <div className="border-[2px] border-gray-700 bg-gray-900 p-3 border-t-[3px]" style={{ borderTopColor: statusColor }}>
                 <p className="font-mono text-[11px] uppercase tracking-[0.28em] text-gray-400">Pending</p>
-                <p className="mt-1 text-lg font-black text-[var(--accent-yellow)]">{detail.entries.filter(e => e.status === "pending").length}</p>
+                <p className="mt-1 text-lg font-black text-[var(--accent-yellow)]">{pendingCount}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="brutal-card overflow-hidden p-0 border-l-[4px]" style={{ borderLeftColor: statusColor }}>
-          <div className="bg-black/40 px-5 py-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">Week actions</p>
-          </div>
-          <div className="flex flex-wrap gap-3 p-5">
-            {detail.week.status === "draft" ? (
-              <form action={openSubmissionsAction}>
-                <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                <button type="submit" className="brutal-btn brutal-btn-green hover-lift">
-                  Open submissions
-                </button>
-              </form>
-            ) : null}
+        {/* H12/H16/H17: Actions with confirmation, error handling, loading states */}
+        <WeekActions
+          weekSlug={detail.week.slug}
+          weekStatus={detail.week.status}
+          approvedCount={approvedCount}
+          statusColor={statusColor}
+        />
 
-            {detail.week.status === "submissions_open" ? (
-              <form action={openVotingAction}>
-                <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                <button type="submit" className="brutal-btn brutal-btn-green hover-lift">
-                  Generate matchups + open voting
-                </button>
-              </form>
-            ) : null}
+        {/* M20/L36/L37: Entries with filter, builder names, URL validation */}
+        <EntryModeration
+          entries={entriesWithMeta}
+          weekSlug={detail.week.slug}
+          weekStatus={detail.week.status}
+        />
 
-            {detail.week.status === "voting_open" ? (
-              <ConfirmForm
-                action={lockWeekAction}
-                confirmMessage="Are you sure you want to lock results? This action cannot be undone."
-              >
-                <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                <button type="submit" className="brutal-btn brutal-btn-blue hover-lift">
-                  Lock results
-                </button>
-              </ConfirmForm>
-            ) : null}
-
-            {detail.week.status === "locked" ? (
-              <ConfirmForm
-                action={archiveWeekAction}
-                confirmMessage="Are you sure you want to archive this week? This action cannot be undone."
-              >
-                <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                <button type="submit" className="brutal-btn brutal-btn-outline hover-lift">
-                  Archive week
-                </button>
-              </ConfirmForm>
-            ) : null}
-
-            <Link href="/admin/weeks" className="brutal-btn brutal-btn-outline">
-              Back to weeks
-            </Link>
-          </div>
-        </div>
-
-        {/* Entries */}
-        <section className="brutal-card overflow-hidden p-0">
-          <div className="flex items-center justify-between bg-black/40 px-5 py-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)]">
-              Entry moderation
-            </p>
-            <span className="brutal-badge brutal-badge-green">
-              {detail.entries.length} total
-            </span>
-          </div>
-
-          {detail.entries.length === 0 ? (
-            <div className="p-6 text-center">
-              <p className="text-sm text-[var(--text-secondary)]">No entries submitted yet.</p>
-            </div>
-          ) : (
-            <div className="divide-y-[2px] divide-[var(--line)]">
-              {detail.entries.map((entry) => {
-                const entryColor =
-                  entry.status === "approved" ? "var(--accent-green)"
-                  : entry.status === "pending" ? "var(--accent-yellow)"
-                  : "var(--accent-red)";
-                return (
-                  <div key={entry.id} className="relative p-5 pl-7">
-                    <div className="absolute left-0 top-0 h-full w-1.5" style={{ background: entryColor }} />
-                    <div className="flex flex-wrap items-start justify-between gap-4">
-                      <div>
-                        <p className="text-lg font-black tracking-tight text-[var(--text-primary)]">
-                          {entry.title}
-                        </p>
-                        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-                          {entry.oneLiner}
-                        </p>
-                      </div>
-                      <span className="inline-block rounded-sm border-[2px] border-[var(--line)] px-2 py-0.5 font-mono text-[10px] font-bold uppercase" style={{ background: entryColor, color: "var(--bg)" }}>
-                        {entry.status}
-                      </span>
-                    </div>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <a
-                        href={safeHref(entry.liveUrl)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="brutal-btn brutal-btn-outline text-[10px] px-3 py-1.5"
-                      >
-                        Open app
-                      </a>
-                      {detail.week.status === "submissions_open" ? (
-                        <>
-                          <form action={reviewEntryAction}>
-                            <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                            <input type="hidden" name="entryId" value={entry.id} />
-                            <input type="hidden" name="decision" value="approved" />
-                            <button type="submit" className="brutal-btn brutal-btn-green text-[10px] px-3 py-1.5">
-                              Approve
-                            </button>
-                          </form>
-                          <form action={reviewEntryAction}>
-                            <input type="hidden" name="weekSlug" value={detail.week.slug} />
-                            <input type="hidden" name="entryId" value={entry.id} />
-                            <input type="hidden" name="decision" value="rejected" />
-                            <button type="submit" className="brutal-btn brutal-btn-outline text-[10px] px-3 py-1.5" style={{ borderColor: "var(--accent-red)", color: "var(--accent-red)" }}>
-                              Reject
-                            </button>
-                          </form>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </section>
+        {/* M27: Leaderboard preview */}
+        {detail.leaderboard.length > 0 ? (
+          <LeaderboardPreview leaderboard={detail.leaderboard} />
+        ) : null}
       </div>
     </div>
   );

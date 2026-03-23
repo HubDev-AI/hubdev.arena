@@ -21,7 +21,8 @@ export function LogoutButton({ dataMode }: { dataMode?: string }) {
         const supabase = createClient();
         await supabase.auth.signOut();
       }
-      window.location.href = "/";
+      // L25: Redirect to /login with logged_out param
+      window.location.href = "/login?logged_out=true";
     } catch {
       setError("Sign out failed. Please try again.");
       setIsLoading(false);
@@ -38,8 +39,9 @@ export function LogoutButton({ dataMode }: { dataMode?: string }) {
       >
         {isLoading ? "..." : "Sign out"}
       </button>
+      {/* L29: Increased error font to text-sm (14px) with proper error color */}
       {error ? (
-        <span className="font-mono text-[10px] text-red-400">{error}</span>
+        <span role="alert" className="font-mono text-sm text-red-400">{error}</span>
       ) : null}
     </div>
   );

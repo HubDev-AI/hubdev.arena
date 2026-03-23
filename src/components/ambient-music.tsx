@@ -20,6 +20,13 @@ export function AmbientMusic({
   const nodesRef = useRef<OscillatorNode[]>([]);
   const animRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  // L43: Use a ref for volume to avoid stale closure in startAudio
+  const volumeRef = useRef(volume);
+
+  // L43: Keep volumeRef in sync
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   const startAudio = useCallback(() => {
     if (ctxRef.current) return;
@@ -29,7 +36,8 @@ export function AmbientMusic({
 
     // Master gain
     const masterGain = ctx.createGain();
-    masterGain.gain.value = volume;
+    // L43: Use ref for current volume value
+    masterGain.gain.value = volumeRef.current;
     gainRef.current = masterGain;
 
     // Analyser for visualizer
@@ -167,7 +175,7 @@ export function AmbientMusic({
     sendData();
 
     setIsPlaying(true);
-  }, [volume, onFrequencyData]);
+  }, [onFrequencyData]);
 
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(animRef.current);
@@ -213,8 +221,9 @@ export function AmbientMusic({
         onClick={isPlaying ? stopAudio : startAudio}
         className="flex h-8 w-8 items-center justify-center border border-[var(--accent-green)]/30 bg-[var(--accent-green)]/5 text-[var(--accent-green)] transition-all hover:bg-[var(--accent-green)] hover:text-black"
         style={{ boxShadow: isPlaying ? "0 0 10px rgba(0, 255, 65, 0.2)" : "none" }}
-        aria-label={isPlaying ? "Mute ambient music" : "Play ambient music"}
-        title={isPlaying ? "Mute" : "Play ambient music"}
+        // L42: Standardize aria-label — "Pause music" / "Play music"
+        aria-label={isPlaying ? "Pause music" : "Play music"}
+        title={isPlaying ? "Pause" : "Play music"}
       >
         {isPlaying ? (
           <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">

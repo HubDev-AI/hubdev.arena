@@ -20,32 +20,64 @@ export const metadata: Metadata = {
     canonical: "https://hubdev-arena.vercel.app/leaderboard",
   },
   openGraph: {
-    title: "Live ELO Leaderboard — HubDev Arena",
+    title: "Live ELO Leaderboard -- HubDev Arena",
     description:
       "Live ELO rankings for this week's AI-built app challenge. See which entries are winning.",
     url: "https://hubdev-arena.vercel.app/leaderboard",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Live ELO Leaderboard — HubDev Arena",
+    title: "Live ELO Leaderboard -- HubDev Arena",
     description:
       "Live ELO rankings for this week's AI-built app competition.",
   },
 };
 
 export default async function LeaderboardPage() {
+  // L21: single getArenaService() call hoisted above try block
+  let service: ReturnType<typeof getArenaService>;
+  try {
+    service = getArenaService();
+  } catch {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 lg:px-8">
+        <div className="brutal-card p-8 text-center">
+          <p className="brutal-label">Leaderboard</p>
+          <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">
+            Unable to load the leaderboard right now.
+          </p>
+          <div className="mt-4">
+            <a
+              href="/leaderboard"
+              className="brutal-btn brutal-btn-outline hover-lift px-6 py-2 text-sm"
+            >
+              Try again
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   let week;
   try {
-    const service = getArenaService();
     week = await service.getCurrentWeek();
   } catch {
     return (
       <div className="mx-auto max-w-5xl px-4 py-24 sm:px-6 lg:px-8">
-        <div className="brutal-card p-8">
+        <div className="brutal-card p-8 text-center">
           <p className="brutal-label">Leaderboard</p>
           <p className="mt-2 text-xl font-bold text-[var(--text-primary)]">
             Unable to load the leaderboard right now. Please try again shortly.
           </p>
+          <div className="mt-4">
+            <a
+              href="/leaderboard"
+              className="brutal-btn brutal-btn-outline hover-lift px-6 py-2 text-sm"
+            >
+              Try again
+            </a>
+          </div>
         </div>
       </div>
     );
@@ -64,9 +96,27 @@ export default async function LeaderboardPage() {
     );
   }
 
-  const leaderboard = await getArenaService().getLeaderboard({ weekSlug: week.slug });
+  const [leaderboard, allWeeks] = await Promise.all([
+    service.getLeaderboard({ weekSlug: week.slug }),
+    service.listWeeks(),
+  ]);
+
+  // Filter to weeks that have meaningful leaderboard data (not drafts)
+  const availableWeeks = allWeeks
+    .filter((w) =>
+      ["submissions_open", "voting_open", "locked", "archived"].includes(w.status),
+    )
+    .map((w) => ({
+      slug: w.slug,
+      themeTitle: w.themeTitle,
+      status: w.status,
+    }));
 
   const totalVotes = leaderboard.reduce((sum, r) => sum + r.wins + r.losses, 0) / 2;
+
+  // L15: Determine CTA state based on week status
+  const isVotingOpen = week.status === "voting_open";
+  const isLocked = week.status === "locked" || week.status === "archived";
 
   return (
     <div className="page-bg page-bg-board">
@@ -104,9 +154,13 @@ export default async function LeaderboardPage() {
         </div>
       </div>
       </ScrollReveal>
-      <LiveLeaderboard weekSlug={week.slug} initialRows={leaderboard} />
+      <LiveLeaderboard
+        weekSlug={week.slug}
+        initialRows={leaderboard}
+        availableWeeks={availableWeeks}
+      />
 
-      {/* CTA */}
+      {/* CTA -- L15: status-aware */}
       <ScrollReveal>
       <div className="brutal-card neon-box scanlines relative overflow-hidden bg-[var(--ink)] p-6 text-white sm:p-8">
         <AuroraBg />
@@ -116,12 +170,36 @@ export default async function LeaderboardPage() {
         }} />
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="neon-text text-lg font-black sm:text-xl">Shape the leaderboard with your votes</p>
-            <p className="mt-1 text-sm text-gray-300">10 head-to-head picks per session. Every vote moves the ELO.</p>
+            {isVotingOpen ? (
+              <>
+                <p className="neon-text text-lg font-black sm:text-xl">Shape the leaderboard with your votes</p>
+                <p className="mt-1 text-sm text-gray-300">10 head-to-head picks per session. Every vote moves the ELO.</p>
+              </>
+            ) : isLocked ? (
+              <>
+                <p className="text-lg font-black sm:text-xl text-gray-300">Voting has ended for this week</p>
+                <p className="mt-1 text-sm text-gray-400">Results are final. Check back next week for a new challenge.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-lg font-black sm:text-xl text-gray-300">Voting opens soon</p>
+                <p className="mt-1 text-sm text-gray-400">Submissions are still being accepted. Voting will begin once the submission period ends.</p>
+              </>
+            )}
           </div>
-          <Link href="/vote" className="brutal-btn brutal-btn-green hover-lift shrink-0">
-            Start voting
-          </Link>
+          {isVotingOpen ? (
+            <Link href="/vote" className="brutal-btn brutal-btn-green hover-lift shrink-0">
+              Start voting
+            </Link>
+          ) : isLocked ? (
+            <Link href="/" className="brutal-btn brutal-btn-outline hover-lift shrink-0">
+              Back to arena
+            </Link>
+          ) : (
+            <span className="brutal-btn brutal-btn-outline shrink-0 opacity-60 cursor-not-allowed" aria-disabled="true">
+              Voting opens soon
+            </span>
+          )}
         </div>
       </div>
       </ScrollReveal>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { AuroraBg } from "@/components/aurora-bg";
 import { GlitchText } from "@/components/glitch-text";
@@ -61,7 +62,7 @@ export default function RulesPage() {
             gradientFrom: "from-[var(--accent-blue)]",
             borderAccent: "border-l-[4px] border-l-[var(--accent-blue)]",
             title: "Voters sign in before they vote",
-            body: "Voting is tied to an authenticated HubDev account. Each signed-in session gives you 10 head-to-head picks. Hashed IP and user-agent fingerprints are kept as secondary abuse signals.",
+            body: "Voting is tied to an authenticated HubDev account. Each signed-in session gives you 10 head-to-head picks. You can vote in multiple sessions throughout the week. Hashed IP and user-agent fingerprints are kept as secondary abuse signals.",
           },
           {
             num: "03",
@@ -107,7 +108,11 @@ export default function RulesPage() {
               <p className="text-lg font-black sm:text-xl">Know the rules. Enter the arena.</p>
               <p className="mt-1 text-sm text-gray-400">Submit your AI-built app and compete for the top spot.</p>
             </div>
-            <a href="/submit" className="brutal-btn brutal-btn-green hover-lift">Submit entry</a>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/vote" className="brutal-btn brutal-btn-outline hover-lift">Start voting</Link>
+              <Link href="/leaderboard" className="brutal-btn brutal-btn-outline hover-lift">View leaderboard</Link>
+              <Link href="/submit" className="brutal-btn brutal-btn-green hover-lift">Submit entry</Link>
+            </div>
           </div>
         </div>
       </ScrollReveal>

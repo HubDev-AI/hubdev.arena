@@ -17,15 +17,31 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Sign in to vote." }, { status: 401 });
     }
 
-    const matchup = await getVoteEngine().getNextMatchup({
+    const result = await getVoteEngine().getNextMatchup({
       weekSlug,
       cookieId: voterContext.userId,
       fingerprintHash: voterContext.fingerprintHash,
     });
 
-    if (!matchup) {
-      return NextResponse.json({ error: "No more matchups available." }, { status: 404 });
+    // H36: Return 200 with status indicator when all matchups are voted,
+    // instead of 404 which signals a missing resource.
+    if (
+      !result ||
+      (typeof result === "object" &&
+        result !== null &&
+        "status" in (result as Record<string, unknown>) &&
+        (result as Record<string, unknown>).status === "all_voted")
+    ) {
+      return NextResponse.json(
+        { status: "all_voted", message: "You've voted on all available matchups!" },
+        { status: 200 },
+      );
     }
+
+    // Unwrap discriminated union: the in-memory service returns { status: "found", deck }
+    // while sec4/RPC paths return the deck directly.
+    const resultObj = result as Record<string, unknown>;
+    const matchup = "deck" in resultObj ? resultObj.deck : result;
 
     return NextResponse.json(matchup);
   } catch {

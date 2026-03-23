@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 
 export function TiltCard({
   children,
@@ -12,8 +12,29 @@ export function TiltCard({
   intensity?: number;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const disabledRef = useRef(false);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+
+    const update = () => {
+      disabledRef.current = mq.matches || isTouchDevice || window.innerWidth < 768;
+    };
+    update();
+
+    const handler = () => update();
+    mq.addEventListener("change", handler);
+    window.addEventListener("resize", handler);
+
+    return () => {
+      mq.removeEventListener("change", handler);
+      window.removeEventListener("resize", handler);
+    };
+  }, []);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (disabledRef.current) return;
     const card = cardRef.current;
     if (!card) return;
 
@@ -33,15 +54,16 @@ export function TiltCard({
     const percentX = (x / rect.width) * 100;
     const percentY = (y / rect.height) * 100;
     card.style.background = `radial-gradient(circle at ${percentX}% ${percentY}%, rgba(0, 255, 65, 0.04) 0%, transparent 50%), var(--surface)`;
-  };
+  }, [intensity]);
 
-  const handleMouseLeave = () => {
+  const handleMouseLeave = useCallback(() => {
+    if (disabledRef.current) return;
     const card = cardRef.current;
     if (!card) return;
     card.style.transform = "perspective(800px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)";
     card.style.transition = "transform 0.4s ease";
     card.style.background = "var(--surface)";
-  };
+  }, []);
 
   return (
     <div

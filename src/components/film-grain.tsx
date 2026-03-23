@@ -1,46 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 
 export function FilmGrain() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    canvas.width = 256;
-    canvas.height = 256;
-
-    let animId = 0;
-    const draw = () => {
-      const imageData = ctx.createImageData(256, 256);
-      const data = imageData.data;
-
-      for (let i = 0; i < data.length; i += 4) {
-        const v = Math.random() * 255;
-        data[i] = v;
-        data[i + 1] = v;
-        data[i + 2] = v;
-        data[i + 3] = 8; // Very subtle opacity
-      }
-
-      ctx.putImageData(imageData, 0, 0);
-      animId = requestAnimationFrame(draw);
-    };
-
-    draw();
-    return () => cancelAnimationFrame(animId);
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
   }, []);
 
+  // H21: Hide entirely when user prefers reduced motion
+  if (prefersReducedMotion) return null;
+
+  // H19: Static CSS-based noise instead of continuous rAF canvas animation.
+  // Uses a repeating SVG data URI for a lightweight grain texture.
   return (
-    <canvas
-      ref={canvasRef}
+    <div
       className="pointer-events-none fixed inset-0 z-[2] h-full w-full mix-blend-overlay"
-      style={{ imageRendering: "pixelated", opacity: 0.03 }}
+      style={{
+        opacity: 0.03,
+        backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        backgroundRepeat: "repeat",
+        backgroundSize: "200px 200px",
+      }}
       aria-hidden="true"
     />
   );

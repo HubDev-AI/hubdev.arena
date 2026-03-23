@@ -17,6 +17,7 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
   const [freqData, setFreqData] = useState<Uint8Array | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.3);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
   const ctxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
@@ -24,6 +25,21 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
   const nodesRef = useRef<OscillatorNode[]>([]);
   const animRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  // L43: Use a ref for volume to avoid stale closure in startAudio
+  const volumeRef = useRef(volume);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  // L43: Keep volumeRef in sync
+  useEffect(() => {
+    volumeRef.current = volume;
+  }, [volume]);
 
   const startAudio = useCallback(() => {
     if (ctxRef.current) return;
@@ -32,7 +48,8 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
     ctxRef.current = ctx;
 
     const masterGain = ctx.createGain();
-    masterGain.gain.value = volume;
+    // L43: Use ref for current volume value
+    masterGain.gain.value = volumeRef.current;
     gainRef.current = masterGain;
 
     const analyser = ctx.createAnalyser();
@@ -244,7 +261,7 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
     };
     tick();
     setIsPlaying(true);
-  }, [volume, preset]);
+  }, [preset]);
 
   const stopAudio = useCallback(() => {
     cancelAnimationFrame(animRef.current);
@@ -280,8 +297,9 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
         onClick={isPlaying ? stopAudio : startAudio}
         className="flex h-7 w-7 shrink-0 items-center justify-center border border-[var(--accent-green)]/30 bg-[var(--accent-green)]/5 text-[var(--accent-green)] transition-all hover:bg-[var(--accent-green)] hover:text-black"
         style={{ boxShadow: isPlaying ? "0 0 10px rgba(0, 255, 65, 0.2)" : "none" }}
-        aria-label={isPlaying ? "Pause ambient music" : "Play ambient music"}
-        title={isPlaying ? "Pause" : "Play ambient music"}
+        // L42: Standardize aria-label — "Pause music" / "Play music"
+        aria-label={isPlaying ? "Pause music" : "Play music"}
+        title={isPlaying ? "Pause" : "Play music"}
       >
         {isPlaying ? (
           <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor">
@@ -297,7 +315,8 @@ export function MusicVisualizer({ className = "", preset = "ambient" }: { classN
 
       {/* Bars + volume stacked — fixed width so slider matches bars exactly */}
       <div className="flex w-[100px] flex-col gap-1">
-        <StatusBar frequencyData={freqData} className="flex" />
+        {/* H21: Static bars when prefers-reduced-motion */}
+        <StatusBar frequencyData={prefersReducedMotion && !isPlaying ? undefined : freqData} className="flex" prefersReducedMotion={prefersReducedMotion} />
         {isPlaying && (
           <input
             type="range"

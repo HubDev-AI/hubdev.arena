@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
+import { getDataMode, getEnv } from "@/lib/env";
 import { assertCsrf } from "@/lib/security/csrf";
 import { getBuilderSession } from "@/lib/server/auth";
 import { getArenaService } from "@/lib/server/runtime";
+import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
 const submissionSchema = z.object({
   weekSlug: z.string().min(1),
@@ -36,12 +38,45 @@ export async function POST(request: Request) {
     }
 
     const body = submissionSchema.parse(json);
-    const entry = await getArenaService().submitEntry({
-      ...body,
-      builderId: session.userId,
-    });
 
-    return NextResponse.json(entry, { status: 201 });
+    // M16: If submission fails after asset upload, clean up the orphaned file.
+    try {
+      const entry = await getArenaService().submitEntry({
+        ...body,
+        builderId: session.userId,
+      });
+
+      return NextResponse.json(entry, { status: 201 });
+    } catch (submissionError) {
+      // Attempt to delete the uploaded asset to prevent orphaned files.
+      // Only applies to Supabase mode — mock paths use synthetic URLs.
+      if (
+        getDataMode() !== "mock" &&
+        body.demoAssetPath &&
+        !body.demoAssetPath.startsWith("mock://")
+      ) {
+        try {
+          const env = getEnv();
+          if (env.NEXT_PUBLIC_SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY) {
+            const supabase = createSupabaseClient(
+              env.NEXT_PUBLIC_SUPABASE_URL,
+              env.SUPABASE_SERVICE_ROLE_KEY,
+              { auth: { autoRefreshToken: false, persistSession: false } },
+            );
+            // Extract the object path from the public URL
+            const bucketPrefix = "/storage/v1/object/public/demo-assets/";
+            const pathIndex = body.demoAssetPath.indexOf(bucketPrefix);
+            if (pathIndex >= 0) {
+              const objectPath = body.demoAssetPath.slice(pathIndex + bucketPrefix.length);
+              await supabase.storage.from("demo-assets").remove([objectPath]);
+            }
+          }
+        } catch {
+          // Best-effort cleanup — don't mask the original submission error.
+        }
+      }
+      throw submissionError;
+    }
   } catch (error) {
     if (error instanceof z.ZodError) {
       return NextResponse.json(

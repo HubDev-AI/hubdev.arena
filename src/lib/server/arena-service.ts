@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { DEFAULT_ELO_RATING, applyEloResult } from "@/lib/domain/elo";
 import { generateUniqueMatchups, selectNextMatchup } from "@/lib/domain/matchups";
 import { transitionWeekStatus } from "@/lib/domain/weeks";
+import type { InMemoryArenaRepository } from "@/lib/server/in-memory-arena-repository";
 import type {
   ArenaRepository,
   Entry,
@@ -72,7 +73,32 @@ type GetVoteDeckInput = {
 };
 
 function stripHtml(input: string): string {
-  return input.replace(/<[^>]*>/g, "").trim();
+  // First pass: remove HTML tags (handles nested/malformed tags by repeating
+  // until no tags remain). Second pass: decode common HTML entities.
+  let result = input;
+  let previous = "";
+  while (result !== previous) {
+    previous = result;
+    result = result.replace(/<[^>]*>/g, "");
+  }
+  // Remove unclosed tags (e.g. "<script" with no closing ">")
+  result = result.replace(/<[^>]*$/g, "");
+  // Decode common HTML entities
+  result = result
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#x27;/gi, "'")
+    .replace(/&#x2F;/gi, "/")
+    .replace(/&nbsp;/gi, " ");
+  // Strip any tags that were hidden inside entities (e.g. &lt;script&gt;)
+  previous = "";
+  while (result !== previous) {
+    previous = result;
+    result = result.replace(/<[^>]*>/g, "");
+  }
+  return result.trim();
 }
 
 function slugify(value: string) {
@@ -162,6 +188,10 @@ function buildVoteDeckEntry(
     builderName,
     foundingBuilder,
   };
+}
+
+function isInMemoryRepository(repo: ArenaRepository): repo is InMemoryArenaRepository {
+  return "mutex" in repo && typeof (repo as InMemoryArenaRepository).mutex?.acquire === "function";
 }
 
 export function createArenaService(
@@ -427,7 +457,10 @@ export function createArenaService(
       };
     },
 
-    async getVoteDeck({ weekSlug, cookieId, fingerprintHash }: GetVoteDeckInput) {
+    async getVoteDeck({ weekSlug, cookieId, fingerprintHash }: GetVoteDeckInput): Promise<
+      | { status: "found"; deck: VoteDeck }
+      | { status: "all_voted"; message: string }
+    > {
       const currentTime = now().toISOString();
       const week = await loadWeek(weekSlug);
 
@@ -449,8 +482,12 @@ export function createArenaService(
         };
       }
 
-      const sessionVotes = await repository.listVotesBySession(voterSession.id);
-      const matchups = await repository.listMatchupsByWeek(week.id);
+      // L35: Parallelize independent data fetches
+      const [sessionVotes, matchups] = await Promise.all([
+        repository.listVotesBySession(voterSession.id),
+        repository.listMatchupsByWeek(week.id),
+      ]);
+
       const matchupResult = selectNextMatchup({
         matchups: matchups.map((matchup) => ({
           id: matchup.id,
@@ -469,67 +506,76 @@ export function createArenaService(
         random,
       });
 
+      // H36: Return discriminated union instead of null
       if (matchupResult.status !== "found") {
-        return null;
+        return { status: "all_voted", message: "You've voted on all available matchups!" };
       }
 
-      const matchup = await repository.getMatchupById(matchupResult.matchup.id);
-      ensure(matchup, "Selected matchup was not found.");
-      matchup.exposureCount += 1;
-      await repository.saveMatchup(matchup);
-
-      const [leftEntry, rightEntry] = await repository.listEntriesByIds([
-        matchup.entryAId,
-        matchup.entryBId,
-      ]);
-      ensure(leftEntry, "Left entry was not found.");
-      ensure(rightEntry, "Right entry was not found.");
-
-      leftEntry.appearanceCount += 1;
-      rightEntry.appearanceCount += 1;
-      await repository.saveEntry(leftEntry);
-      await repository.saveEntry(rightEntry);
-
-      const [leftBuilder, rightBuilder] = await Promise.all([
-        loadProfile(leftEntry.builderId),
-        loadProfile(rightEntry.builderId),
-      ]);
-
-      voterSession.lastSeenAt = currentTime;
-      voterSession.fingerprintHash = fingerprintHash;
+      // C1: Wrap exposure/appearance count mutations in mutex for in-memory path
+      const useInMemoryMutex = isInMemoryRepository(repository);
+      if (useInMemoryMutex) await repository.mutex.acquire();
       try {
-        await repository.saveVoterSession(voterSession);
-      } catch {
-        // A concurrent request may have created the session already.
-        // Re-query by cookieId and use the existing record.
-        // NOTE: The Supabase implementation should have a unique constraint
-        // on (week_id, cookie_id) so that duplicate inserts fail.
-        const existing = await repository.getVoterSessionByCookie(week.id, cookieId);
-        if (existing) {
-          voterSession = existing;
-          voterSession.lastSeenAt = currentTime;
-          voterSession.fingerprintHash = fingerprintHash;
-          await repository.saveVoterSession(voterSession);
-        } else {
-          throw new Error("Failed to create voter session.");
-        }
-      }
+        const matchup = await repository.getMatchupById(matchupResult.matchup.id);
+        ensure(matchup, "Selected matchup was not found.");
+        matchup.exposureCount += 1;
+        await repository.saveMatchup(matchup);
 
-      return {
-        matchupId: matchup.id,
-        leftEntry: buildVoteDeckEntry(
-          leftEntry,
-          leftBuilder.displayName,
-          leftBuilder.foundingBuilder,
-        ),
-        rightEntry: buildVoteDeckEntry(
-          rightEntry,
-          rightBuilder.displayName,
-          rightBuilder.foundingBuilder,
-        ),
-        votesCast: voterSession.votesCast,
-        votingClosesAt: week.votingCloseAt,
-      } satisfies VoteDeck;
+        const [leftEntry, rightEntry] = await repository.listEntriesByIds([
+          matchup.entryAId,
+          matchup.entryBId,
+        ]);
+        ensure(leftEntry, "Left entry was not found.");
+        ensure(rightEntry, "Right entry was not found.");
+
+        leftEntry.appearanceCount += 1;
+        rightEntry.appearanceCount += 1;
+        await repository.saveEntry(leftEntry);
+        await repository.saveEntry(rightEntry);
+
+        const [leftBuilder, rightBuilder] = await Promise.all([
+          loadProfile(leftEntry.builderId),
+          loadProfile(rightEntry.builderId),
+        ]);
+
+        voterSession.lastSeenAt = currentTime;
+        voterSession.fingerprintHash = fingerprintHash;
+        try {
+          await repository.saveVoterSession(voterSession);
+        } catch {
+          // A concurrent request may have created the session already.
+          // Re-query by cookieId and use the existing record.
+          const existing = await repository.getVoterSessionByCookie(week.id, cookieId);
+          if (existing) {
+            voterSession = existing;
+            voterSession.lastSeenAt = currentTime;
+            voterSession.fingerprintHash = fingerprintHash;
+            await repository.saveVoterSession(voterSession);
+          } else {
+            throw new Error("Failed to create voter session.");
+          }
+        }
+
+        return {
+          status: "found" as const,
+          deck: {
+            matchupId: matchup.id,
+            leftEntry: buildVoteDeckEntry(
+              leftEntry,
+              leftBuilder.displayName,
+              leftBuilder.foundingBuilder,
+            ),
+            rightEntry: buildVoteDeckEntry(
+              rightEntry,
+              rightBuilder.displayName,
+              rightBuilder.foundingBuilder,
+            ),
+            votesCast: voterSession.votesCast,
+            votingClosesAt: week.votingCloseAt,
+          } satisfies VoteDeck,
+        };
+      } finally {
+        if (useInMemoryMutex) repository.mutex.release();
+      }
     },
 
     async castVote(input: CastVoteInput) {
@@ -597,63 +643,76 @@ export function createArenaService(
         currentTime,
       );
 
-      const winner = await loadEntry(input.winnerEntryId);
-      const loser = await loadEntry(input.loserEntryId);
-      const eloResult = applyEloResult({
-        winnerRating: winner.eloRating,
-        loserRating: loser.eloRating,
-      });
-
-      winner.eloRating = eloResult.winnerRating;
-      winner.wins += 1;
-      loser.eloRating = eloResult.loserRating;
-      loser.losses += 1;
-      matchup.voteCount += 1;
-      voterSession.votesCast += 1;
-      voterSession.fingerprintHash = input.fingerprintHash;
-      voterSession.lastSeenAt = currentTime.toISOString();
-
-      const vote = {
-        id: randomUUID(),
-        weekId: week.id,
-        matchupId: matchup.id,
-        winnerEntryId: winner.id,
-        loserEntryId: loser.id,
-        voterSessionId: voterSession.id,
-        fingerprintHash: input.fingerprintHash,
-        idempotencyKey: input.idempotencyKey,
-        createdAt: currentTime.toISOString(),
-      };
-
-      await repository.saveEntry(winner);
-      await repository.saveEntry(loser);
-      await repository.saveMatchup(matchup);
+      // C1/C2: Wrap the entire read-compute-write-save ELO sequence in a mutex
+      // for the in-memory path. The Supabase RPC path handles this atomically.
+      const useInMemoryMutex = isInMemoryRepository(repository);
+      if (useInMemoryMutex) await repository.mutex.acquire();
       try {
-        await repository.saveVoterSession(voterSession);
-      } catch {
-        // A concurrent request may have created the session already.
-        // Re-query by cookieId and use the existing record.
-        // NOTE: The Supabase implementation should have a unique constraint
-        // on (week_id, cookie_id) so that duplicate inserts fail.
-        const existing = await repository.getVoterSessionByCookie(week.id, input.cookieId);
-        if (existing) {
-          voterSession = existing;
-          voterSession.votesCast += 1;
-          voterSession.fingerprintHash = input.fingerprintHash;
-          voterSession.lastSeenAt = currentTime.toISOString();
-          await repository.saveVoterSession(voterSession);
-        } else {
-          throw new Error("Failed to create voter session.");
-        }
-      }
-      vote.voterSessionId = voterSession.id;
-      await repository.saveVote(vote);
+        // Re-read entries inside the lock to get current ELO values
+        const winner = await loadEntry(input.winnerEntryId);
+        const loser = await loadEntry(input.loserEntryId);
+        const eloResult = applyEloResult({
+          winnerRating: winner.eloRating,
+          loserRating: loser.eloRating,
+        });
 
-      return {
-        vote,
-        winner,
-        loser,
-      };
+        // Prepare the vote record
+        const vote = {
+          id: randomUUID(),
+          weekId: week.id,
+          matchupId: matchup.id,
+          winnerEntryId: winner.id,
+          loserEntryId: loser.id,
+          voterSessionId: voterSession.id,
+          fingerprintHash: input.fingerprintHash,
+          idempotencyKey: input.idempotencyKey,
+          createdAt: currentTime.toISOString(),
+        };
+
+        // C3: Save vote FIRST. If this fails, ELO changes are never applied.
+        // Ensure voter session exists before saving the vote.
+        voterSession.votesCast += 1;
+        voterSession.fingerprintHash = input.fingerprintHash;
+        voterSession.lastSeenAt = currentTime.toISOString();
+        try {
+          await repository.saveVoterSession(voterSession);
+        } catch {
+          // M25: A concurrent request may have created the session already.
+          // Re-query and use re-queried value + 1. Don't carry over the
+          // prior increment which would double-count.
+          const existing = await repository.getVoterSessionByCookie(week.id, input.cookieId);
+          if (existing) {
+            voterSession = existing;
+            voterSession.votesCast = existing.votesCast + 1;
+            voterSession.fingerprintHash = input.fingerprintHash;
+            voterSession.lastSeenAt = currentTime.toISOString();
+            await repository.saveVoterSession(voterSession);
+          } else {
+            throw new Error("Failed to create voter session.");
+          }
+        }
+        vote.voterSessionId = voterSession.id;
+        await repository.saveVote(vote);
+
+        // Now apply ELO changes — vote is already persisted
+        winner.eloRating = eloResult.winnerRating;
+        winner.wins += 1;
+        loser.eloRating = eloResult.loserRating;
+        loser.losses += 1;
+        matchup.voteCount += 1;
+
+        await repository.saveEntry(winner);
+        await repository.saveEntry(loser);
+        await repository.saveMatchup(matchup);
+
+        return {
+          vote,
+          winner,
+          loser,
+        };
+      } finally {
+        if (useInMemoryMutex) repository.mutex.release();
+      }
     },
 
     async getLeaderboard({ weekSlug }: { weekSlug: string }) {

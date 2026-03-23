@@ -1,11 +1,24 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function CursorGlow() {
   const glowRef = useRef<HTMLDivElement>(null);
+  const [isDisabled, setIsDisabled] = useState(false);
 
   useEffect(() => {
+    // H21: Check prefers-reduced-motion
+    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setIsDisabled(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsDisabled(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    // H21: Disable cursor glow when reduced motion is preferred
+    if (isDisabled) return;
+
     const glow = glowRef.current;
     if (!glow) return;
 
@@ -34,7 +47,10 @@ export function CursorGlow() {
       window.removeEventListener("mousemove", handleMouseMove);
       cancelAnimationFrame(animId);
     };
-  }, []);
+  }, [isDisabled]);
+
+  // H21: Don't render if disabled
+  if (isDisabled) return null;
 
   return (
     <div

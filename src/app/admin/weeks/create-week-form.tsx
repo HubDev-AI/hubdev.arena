@@ -39,11 +39,14 @@ export function CreateWeekForm() {
     }
 
     try {
-      await createWeekAction(formData);
-    } catch (caughtError) {
-      const message =
-        caughtError instanceof Error ? caughtError.message : "Failed to create week.";
-      setError(message);
+      // H15: createWeekAction now returns { success, error? } instead of throwing
+      const result = await createWeekAction(formData);
+      if (!result.success && result.error) {
+        setError(result.error);
+      }
+      // On success, the action redirects to the new week detail page
+    } catch {
+      setError("An unexpected error occurred.");
     } finally {
       setIsSubmitting(false);
     }
@@ -86,6 +89,18 @@ export function CreateWeekForm() {
         />
       </label>
 
+      {/* L30: Theme description moved here, directly after title */}
+      <label className="block space-y-2">
+        <span className="brutal-label">Theme description</span>
+        <textarea
+          required
+          name="themeDescription"
+          rows={4}
+          className="brutal-input"
+          placeholder="Describe the theme for this week's challenge..."
+        />
+      </label>
+
       {/* Timezone dropdown */}
       <label className="block space-y-2">
         <span className="brutal-label">Timezone</span>
@@ -115,18 +130,6 @@ export function CreateWeekForm() {
           />
         </label>
       ))}
-
-      {/* Theme description */}
-      <label className="block space-y-2">
-        <span className="brutal-label">Theme description</span>
-        <textarea
-          required
-          name="themeDescription"
-          rows={4}
-          className="brutal-input"
-          placeholder="Describe the theme for this week's challenge..."
-        />
-      </label>
 
       <button
         type="submit"

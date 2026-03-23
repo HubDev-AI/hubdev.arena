@@ -7,6 +7,7 @@ interface ActivityEvent {
   type: "vote" | "submit" | "elo_change";
   text: string;
   timestamp: number;
+  simulated?: boolean;
 }
 
 interface LeaderboardEntry {
@@ -38,8 +39,10 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
   const [events, setEvents] = useState<ActivityEvent[]>([]);
   const [counter, setCounter] = useState(0);
   const prevDataRef = useRef<LeaderboardEntry[] | null>(null);
+  const hasRealDataRef = useRef(false);
+  const [hasRealData, setHasRealData] = useState(false);
 
-  const addEvent = useCallback((type: ActivityEvent["type"], text: string) => {
+  const addEvent = useCallback((type: ActivityEvent["type"], text: string, simulated = false) => {
     setCounter((c) => c + 1);
     setEvents((prev) => {
       const newEvent: ActivityEvent = {
@@ -47,15 +50,18 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
         text,
         id: Date.now() + Math.random(),
         timestamp: Date.now(),
+        simulated,
       };
       return [newEvent, ...prev].slice(0, 4);
     });
   }, []);
 
   const addMockEvent = useCallback(() => {
+    // Stop generating mock events once real data has loaded
+    if (hasRealDataRef.current) return;
     const template = MOCK_EVENTS[Math.floor(Math.random() * MOCK_EVENTS.length)];
     if (template) {
-      addEvent(template.type, template.text);
+      addEvent(template.type, template.text, true);
     }
   }, [addEvent]);
 
@@ -78,9 +84,14 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
         const prev = prevDataRef.current;
 
         if (isFirstFetch && data.length > 0) {
-          // Seed an initial event so the feed isn't empty
+          // Mark that real data is now available — stop mock events
           isFirstFetch = false;
+          hasRealDataRef.current = true;
+          setHasRealData(true);
           const totalVotes = data.reduce((sum, e) => sum + (e.wins as number) + (e.losses as number), 0) / 2;
+          // Clear any simulated events and replace with real seed
+          setEvents([]);
+          setCounter(0);
           addEvent("elo_change", `${data.length} entries competing \u00b7 ${Math.round(totalVotes)} votes`);
         }
 
@@ -132,18 +143,19 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
     };
   }, [weekSlug, addEvent]);
 
-  // Ambient mock events — runs alongside real polling to keep the feed alive
-  // between polls, and as primary source when no weekSlug is provided
+  // Mock events — only used as initial seed before real data loads,
+  // or as primary source when no weekSlug is provided
   useEffect(() => {
-    // Seed an initial event immediately
+    if (weekSlug) {
+      // Seed one mock event while waiting for the first real fetch
+      addMockEvent();
+      // No interval — real polling will take over
+      return;
+    }
+
+    // No weekSlug: mock events are the primary source
     addMockEvent();
-
-    // Slower interval when weekSlug is provided (background ambience)
-    // Faster when no weekSlug (primary source)
-    const delay = weekSlug ? 8000 : 4000;
-    const jitter = weekSlug ? 4000 : 3000;
-
-    const interval = setInterval(addMockEvent, delay + Math.random() * jitter);
+    const interval = setInterval(addMockEvent, 4000 + Math.random() * 3000);
     return () => clearInterval(interval);
   }, [weekSlug, addMockEvent]);
 
@@ -156,8 +168,8 @@ export function LivePulse({ className = "", weekSlug }: LivePulseProps) {
   return (
     <div className={`brutal-card overflow-hidden p-0 ${className}`}>
       <div className="bg-black/40 px-5 py-3 flex items-center justify-between flow-border-bottom">
-        <p className="live-indicator font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)] neon-text">
-          Live activity
+        <p className={`${hasRealData ? "live-indicator" : ""} font-mono text-[11px] uppercase tracking-[0.3em] text-[var(--accent-green)] neon-text`}>
+          {hasRealData ? "Live activity" : "Activity"}
         </p>
         <span className="font-mono text-[10px] text-gray-500 pulse-glow">
           {counter} events

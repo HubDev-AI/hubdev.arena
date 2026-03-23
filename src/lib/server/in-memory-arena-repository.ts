@@ -19,13 +19,45 @@ function upsertById<T extends { id: string }>(collection: T[], record: T) {
   collection.push(clone(record));
 }
 
-export type InMemoryArenaRepository = ArenaRepository & { state: ArenaState };
+/**
+ * Simple async mutex for serializing in-memory read-compute-write sequences.
+ * Prevents race conditions when concurrent requests mutate shared state
+ * (e.g. ELO updates, exposure/appearance count increments).
+ */
+export class AsyncMutex {
+  private locked = false;
+  private queue: (() => void)[] = [];
+
+  async acquire(): Promise<void> {
+    if (!this.locked) {
+      this.locked = true;
+      return;
+    }
+    return new Promise<void>((resolve) => this.queue.push(resolve));
+  }
+
+  release(): void {
+    const next = this.queue.shift();
+    if (next) {
+      next();
+    } else {
+      this.locked = false;
+    }
+  }
+}
+
+export type InMemoryArenaRepository = ArenaRepository & {
+  state: ArenaState;
+  mutex: AsyncMutex;
+};
 
 export function createInMemoryArenaRepository(initialState: ArenaState): InMemoryArenaRepository {
   const state = clone(initialState);
+  const mutex = new AsyncMutex();
 
   return {
     state,
+    mutex,
     async listProfiles() {
       return clone(state.profiles);
     },

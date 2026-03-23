@@ -66,7 +66,7 @@ export default async function VotePage() {
               phrases={[
                 "Every vote is authenticated. One account, one voice, zero bots.",
                 "Shape the leaderboard. Pick the apps worth opening again.",
-                "10 matchups. Live ELO. Real impact on rankings.",
+                "Vote in head-to-head matchups. Live ELO. Real impact on rankings.",
               ]}
               className="text-gray-300"
             />
@@ -90,7 +90,7 @@ export default async function VotePage() {
         <div className="grid gap-4 sm:grid-cols-3">
           {[
             { num: "01", title: "Sign in", desc: "Use X or magic link email", color: "#00FF41", glow: "rgba(0, 255, 65, 0.15)", delay: 0 },
-            { num: "02", title: "Pick winners", desc: "10 head-to-head matchups", color: "#00FFAA", glow: "rgba(0, 255, 170, 0.15)", delay: 150 },
+            { num: "02", title: "Pick winners", desc: "Vote in head-to-head matchups", color: "#00FFAA", glow: "rgba(0, 255, 170, 0.15)", delay: 150 },
             { num: "03", title: "Shape the board", desc: "Live ELO updates instantly", color: "#0033FF", glow: "rgba(0, 51, 255, 0.15)", delay: 300 },
           ].map((step) => (
             <ScrollReveal key={step.num} delay={step.delay}>
